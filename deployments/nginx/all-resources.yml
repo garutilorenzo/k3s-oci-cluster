@@ -1,0 +1,214 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes  1;
+    
+    error_log  /dev/stderr warn;
+    pid        /var/run/nginx.pid;
+
+    events {
+      worker_connections  1024;
+    }
+
+    http {
+      include       /etc/nginx/mime.types;
+      default_type  application/octet-stream;
+
+      sendfile        on;
+    
+      tcp_nopush on;
+      tcp_nodelay on;
+      keepalive_timeout 65;
+      types_hash_max_size 2048;
+      client_max_body_size 20M;
+      
+      ##
+      # SSL Settings
+      ##
+
+      ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+      ssl_prefer_server_ciphers on;
+
+      log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+
+      access_log  /dev/stdout  main;
+
+      ##
+      # Gzip Settings
+      ##
+
+      gzip on;
+      gzip_disable "msie6";
+
+      gzip_vary on;
+      gzip_proxied any;
+      gzip_comp_level 6;
+      gzip_buffers 16 8k;
+      gzip_http_version 1.1;
+      gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+      include /etc/nginx/conf.d/*.conf;
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wordpress-conf
+data:
+  wordpress.conf: |
+    server {
+      listen       80 default_server;
+      listen  [::]:80 default_server;
+
+      server_name _;
+      root /var/www/html;
+      index index.html index.php;
+      
+      client_max_body_size 20M;
+
+      # Prevent Clickjacking
+      add_header X-Frame-Options "SAMEORIGIN";
+      add_header X-Content-Type-Options "nosniff";
+
+      charset utf-8;
+
+      # Set the custom error pages
+      error_page 404 /index.php;
+      error_page 403 /index.php;
+
+      # Logs
+      error_log /dev/stderr;
+      access_log /dev/stdout;
+
+      # Remove direct access to the following folders & files
+      location ~* ^/(?:\.|conf|data/(?:files|personal|logs|plugins|tmp|cache)|plugins/editor.zoho/agent/files) {
+          deny all;
+      }
+
+      location ~* /data/public/.*.(ser|htaccess)$ {
+          deny all;
+      }
+
+      # Stops the annoying error messages in the logs
+      location ~* ^/(favicon.ico|robots.txt) {
+          log_not_found off;
+      }
+
+      location = /favicon.ico {
+          expires 1y;
+          log_not_found off;
+          access_log off;
+      }
+
+      # Enables PHP
+      location ~ \.php$ {
+          fastcgi_split_path_info ^(.+\.php)(/.+)$;
+          fastcgi_pass  wordpress-svc:9000;
+          fastcgi_index index.php;
+          include fastcgi_params;
+          fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          fastcgi_param SCRIPT_NAME $fastcgi_script_name;
+      }
+
+      # Enables Caching
+      location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+          expires 7d;
+          add_header Pragma public;
+          add_header Cache-Control "public, must-revalidate, proxy-revalidate";
+      }
+
+      # The rewrite magic
+      location / {
+          try_files $uri $uri/ /index.php?$args;
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+      tier: frontend
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: nginx
+        tier: frontend
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx
+        volumeMounts:
+        - name: "wordpress-persistent-storage"
+          mountPath: "/var/www/html"
+        - name: nginx-conf
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+          readOnly: true
+        - name: wordpress-conf
+          mountPath: /etc/nginx/conf.d/wordpress.conf
+          subPath: wordpress.conf
+          readOnly: true
+      volumes:
+      - name: nginx-conf
+        configMap:
+          name: nginx-conf
+          items:
+            - key: nginx.conf
+              path: nginx.conf
+      - name: wordpress-conf
+        configMap:
+          name: wordpress-conf
+          items:
+            - key: wordpress.conf
+              path: wordpress.conf
+      - name: wordpress-persistent-storage
+        persistentVolumeClaim:
+          claimName: wordpress-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nginx
+    tier: frontend
+  name: nginx-svc
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx
+    tier: frontend
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-wp-ingress
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-svc
+            port:
+              number: 80

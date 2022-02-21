@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+      tier: frontend
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: nginx
+        tier: frontend
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx
+        volumeMounts:
+        - name: "wordpress-persistent-storage"
+          mountPath: "/var/www/html"
+        - name: nginx-conf
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+          readOnly: true
+        - name: wordpress-conf
+          mountPath: /etc/nginx/conf.d/wordpress.conf
+          subPath: wordpress.conf
+          readOnly: true
+      volumes:
+      - name: nginx-conf
+        configMap:
+          name: nginx-conf
+          items:
+            - key: nginx.conf
+              path: nginx.conf
+      - name: wordpress-conf
+        configMap:
+          name: wordpress-conf
+          items:
+            - key: wordpress.conf
+              path: wordpress.conf
+      - name: wordpress-persistent-storage
+        persistentVolumeClaim:
+          claimName: wordpress-pvc

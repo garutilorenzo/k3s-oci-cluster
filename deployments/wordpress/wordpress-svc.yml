@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: wordpress
+    tier: frontend
+  name: wordpress-svc
+spec:
+  ports:
+  - port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app: wordpress
+    tier: frontend
+  type: ClusterIP
