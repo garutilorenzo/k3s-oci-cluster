@@ -169,17 +169,19 @@ oci compute image list --compartment-id <compartment_ocid> --operating-system "C
 
 ## Notes about OCI always free resources
 
-In order to get the maximum resources available within the oracle always free tier the max amount of the k3s servers and k3s workers must be 2 for each kind of role. So *k3s_server_pool_size* and *k3s_worker_pool_size* **must** be 2.
+In order to get the maximum resources available within the oracle always free tier, the max amount of the k3s servers and k3s workers must be 2. So the max value for *k3s_server_pool_size* and *k3s_worker_pool_size* **is** 2.
 
-In this setup we use two LB, one internal LB and one public LB. In order to use two LB one lb must be a "network" LB an the other an "http" LB. The public LB **must** use the *flexible* shape.
+In this setup we use two LB, one internal LB and one public LB. In order to use two LB using the always free resources, one lb must be a [network load balancer](https://docs.oracle.com/en-us/iaas/Content/NetworkLoadBalancer/introducton.htm#Overview) an the other must be a [load balancer](https://docs.oracle.com/en-us/iaas/Content/Balance/Concepts/balanceoverview.htm). The public LB **must** use the *flexible* shape (*public_lb_shape* variable).
 
 ## Notes about K3s
 
 In this environment the High Availability of the K3s cluster is provided using the Embedded DB. More details [here](https://rancher.com/docs/k3s/latest/en/installation/ha-embedded/)
 
+K3s will automatically install [Traefik](https://traefik.io/). Traefik is a modern HTTP reverse proxy and load balancer made to deploy microservices with ease. It simplifies networking complexity while designing, deploying, and running applications. More details [here](https://rancher.com/docs/k3s/latest/en/networking/#traefik-ingress-controller)
+
 ## Cluster resource deployed
 
-This setup will automatically install [longhorn](https://longhorn.io/) "Cloud native distributed block storage for Kubernetes". To disable the longhorn deployment set *install_longhorn* variable to *false*
+This setup will automatically install [longhorn](https://longhorn.io/). Longhorn is a *Cloud native distributed block storage for Kubernetes*. To disable the longhorn deployment set *install_longhorn* variable to *false*
 
 ## Deploy
 
