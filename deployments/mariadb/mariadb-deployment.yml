@@ -30,7 +30,7 @@ spec:
         - name: MYSQL_PASSWORD
           value: W0rd_Pr3sSUs3r.
         volumeMounts:
-        - name: "mysql-persistent-storage"
+        - name: "mariadb-persistent-storage"
           mountPath: "/var/lib/mysql/"
       volumes:
       - name: mariadb-persistent-storage
