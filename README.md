@@ -3,6 +3,8 @@
 [![GitHub forks](https://img.shields.io/github/forks/garutilorenzo/k3s-oci-cluster)](https://github.com/garutilorenzo/k3s-oci-cluster/network)
 [![GitHub stars](https://img.shields.io/github/stars/garutilorenzo/k3s-oci-cluster)](https://github.com/garutilorenzo/k3s-oci-cluster/stargazers)
 
+![k3s Logo](https://garutilorenzo.github.io/images/k3s-logo-large.png?)
+
 # OCI K3s cluster
 
 Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm) resources.
@@ -16,6 +18,7 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
 * [Pre flight checklist](#pre-flight-checklist)
 * [Notes about OCI always free resources](#notes-about-oci-always-free-resources)
 * [Notes about K3s](#notes-about-k3s)
+* [Infrastructure overview](#infrastructure-overview)
 * [Cluster resource deployed](#cluster-resource-deployed)
 * [Deploy](#deploy)
 * [Deploy a sample stack](#deploy-a-sample-stack)
@@ -178,6 +181,27 @@ In this setup we use two LB, one internal LB and one public LB. In order to use 
 In this environment the High Availability of the K3s cluster is provided using the Embedded DB. More details [here](https://rancher.com/docs/k3s/latest/en/installation/ha-embedded/)
 
 K3s will automatically install [Traefik](https://traefik.io/). Traefik is a modern HTTP reverse proxy and load balancer made to deploy microservices with ease. It simplifies networking complexity while designing, deploying, and running applications. More details [here](https://rancher.com/docs/k3s/latest/en/networking/#traefik-ingress-controller)
+
+## Infrastructure overview
+
+The final infrastructure will be made by:
+
+* two instance pool:
+  * one instance pool for the server nodes named "k3s-servers"
+  * one instance pool for the worker nodes named "k3s-workers"
+* one internal load balancer that will route traffic to K3s servers
+* one external load balancer that will route traffic to K3s workers
+
+The other resources created by terraform are:
+
+* two instance configurations (one for the servers and one for the workers) used by the instance pools
+* one vcn
+* two public subnets
+* two security list
+* one dynamic group
+* one identity policy
+
+![k3s infra](https://garutilorenzo.github.io/images/k3s-oci-always-free.drawio.png?)
 
 ## Cluster resource deployed
 
