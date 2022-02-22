@@ -16,6 +16,7 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
 * [Important notes](#important-notes)
 * [Requirements](#requirements)
 * [Example RSA key generation](#example-rsa-key-generation)
+* [Project setup](#project-setup)
 * [Oracle provider setup](#oracle-provider-setup)
 * [Pre flight checklist](#pre-flight-checklist)
 * [Notes about OCI always free resources](#notes-about-oci-always-free-resources)
@@ -55,6 +56,118 @@ openssl rsa -pubout -in ~/.oci/<your_name>-oracle-cloud.pem -out ~/.oci/<your_na
 replace *<your_name>* with your name or a string you prefer.
 
 **NOTE** ~/.oci/<your_name>-oracle-cloud_public.pem this string will be used on the *terraform.tfvars* used by the Oracle provider plugin, so please take note of this string.
+
+### Project setup
+
+Clone this repo and go in the *example/* directory:
+
+```
+git clone https://github.com/garutilorenzo/k3s-oci-cluster.git
+cd k3s-oci-cluster/example/
+```
+
+Now you have to edit the *main.tf* file and you have to create the *terraform.tfvars* file. For more detail see [Oracle provider setup](#oracle-provider-setup) and [Pre flight checklist](#pre-flight-checklist).
+
+Or if you prefer you can create an new empty directory in your workspace and create this three files:
+
+* terraform.tfvars - More details in [Oracle provider setup](#oracle-provider-setup)
+* main.tf
+* provider.tf
+
+The main.tf file will look like:
+
+
+```
+variable "compartment_ocid" {
+
+}
+
+variable "tenancy_ocid" {
+
+}
+
+variable "user_ocid" {
+
+}
+
+variable "fingerprint" {
+
+}
+
+variable "private_key_path" {
+
+}
+
+variable "region" {
+  default = "<change_me>"
+}
+
+module "k3s_cluster" {
+  region              = var.region
+  availability_domain = "<change_me>"
+  compartment_ocid    = var.compartment_ocid
+  my_public_ip_cidr   = "<change_me>"
+  cluster_name        = "<change_me>"
+  environment         = "staging"
+  k3s_token           = "<change_me>"
+  source              = "github.com/garutilorenzo/k3s-oci-cluster"
+}
+
+output "k3s_servers_ips" {
+  value = module.k3s_cluster.k3s_servers_ips
+}
+
+output "k3s_workers_ips" {
+  value = module.k3s_cluster.k3s_workers_ips
+}
+
+output "public_lb_ip" {
+  value = module.k3s_cluster.public_lb_ip
+}
+```
+
+For all the possible variables see [Pre flight checklist](#pre-flight-checklist)
+
+The provider.tf will look like:
+
+```
+provider "oci" {
+  tenancy_ocid     = var.tenancy_ocid
+  user_ocid        = var.user_ocid
+  private_key_path = var.private_key_path
+  fingerprint      = var.fingerprint
+  region           = var.region
+}
+```
+
+Now we can init terraform with:
+
+```
+terraform init
+
+terraform init
+Initializing modules...
+Downloading git::https://github.com/garutilorenzo/k3s-oci-cluster.git for k3s_cluster...
+- k3s_cluster in .terraform/modules/k3s_cluster
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/oci from the dependency lock file
+- Reusing previous version of hashicorp/template from the dependency lock file
+- Using previously-installed hashicorp/template v2.2.0
+- Using previously-installed hashicorp/oci v4.64.0
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+```
 
 ### Oracle provider setup
 
