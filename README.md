@@ -3,7 +3,9 @@
 [![GitHub forks](https://img.shields.io/github/forks/garutilorenzo/k3s-oci-cluster)](https://github.com/garutilorenzo/k3s-oci-cluster/network)
 [![GitHub stars](https://img.shields.io/github/stars/garutilorenzo/k3s-oci-cluster)](https://github.com/garutilorenzo/k3s-oci-cluster/stargazers)
 
-![k3s Logo](https://garutilorenzo.github.io/images/k3s-logo.png?)
+<p align="center">
+  <img src="https://garutilorenzo.github.io/images/k3s-logo-large.png?" alt="k3s Logo"/>
+</p>
 
 # OCI K3s cluster
 
