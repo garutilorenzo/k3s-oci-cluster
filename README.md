@@ -3,7 +3,7 @@
 [![GitHub forks](https://img.shields.io/github/forks/garutilorenzo/k3s-oci-cluster)](https://github.com/garutilorenzo/k3s-oci-cluster/network)
 [![GitHub stars](https://img.shields.io/github/stars/garutilorenzo/k3s-oci-cluster)](https://github.com/garutilorenzo/k3s-oci-cluster/stargazers)
 
-![k3s Logo](https://garutilorenzo.github.io/images/k3s-logo-large.png?)
+![k3s Logo](https://garutilorenzo.github.io/images/k3s-logo.png?)
 
 # OCI K3s cluster
 
@@ -495,6 +495,8 @@ wordpress-svc     ClusterIP   10.43.242.26    <none>        9000/TCP   91m
 ```
 
 Now you are ready to setup WP, open the LB public ip and follow the wizard. **NOTE** nginx and Traefik are configured without virthual host/server name.
+
+![k3s wp install](https://garutilorenzo.github.io/images/k3s-wp.png?)
 
 To clean the deployed resources:
 
