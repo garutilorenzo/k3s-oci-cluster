@@ -1,5 +1,17 @@
 #!/bin/bash
 
+wait_lb() {
+    while [ true ]
+    do
+        curl --output /dev/null --silent -k https://${k3s_url}:6443
+        if [[ "$?" -eq 0 ]]; then
+            break
+        fi
+        sleep 5
+        echo "wait for LB"
+    done
+}
+
 # Disable firewall 
 /usr/sbin/netfilter-persistent stop
 /usr/sbin/netfilter-persistent flush
@@ -36,6 +48,7 @@ if [[ "$first_instance" == "$instance_id" ]]; then
     done
 else
     echo ":( Cluster join"
+    wait_lb
     until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --server https://${k3s_url}:6443 $disable_traefik --node-ip $local_ip --advertise-address $local_ip --flannel-iface $flannel_iface --tls-san ${k3s_tls_san}); do
         echo 'k3s did not install correctly'
         sleep 2
@@ -60,7 +73,7 @@ fi
 
 %{ if install_nginx_ingress }
 if [[ "$first_last" == "first" ]]; then
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/baremetal/deploy.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/baremetal/deploy.yaml
     kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/nginx-ingress-config/all-resources.yml
 fi
 
