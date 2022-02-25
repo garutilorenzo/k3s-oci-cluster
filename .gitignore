@@ -39,3 +39,5 @@ terraform.rc
 *Pipfile.lock
 
 main.tf_ori
+
+ssl/
