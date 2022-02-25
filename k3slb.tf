@@ -1,6 +1,6 @@
 resource "oci_network_load_balancer_network_load_balancer" "k3s_load_balancer" {
   compartment_id = var.compartment_ocid
-  display_name   = "k3s internal load balancer"
+  display_name   = var.k3s_load_balancer_name
   subnet_id      = oci_core_subnet.oci_core_subnet11.id
 
   is_private                     = true

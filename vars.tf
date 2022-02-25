@@ -66,6 +66,21 @@ variable "oci_identity_policy_name" {
   description = "Policy to allow dynamic group, to read OCI api without auth"
 }
 
+variable "oci_core_vcn_dns_label" {
+  type    = string
+  default = "defaultvcn"
+}
+
+variable "oci_core_subnet_dns_label10" {
+  type    = string
+  default = "defaultsubnet10"
+}
+
+variable "oci_core_subnet_dns_label11" {
+  type    = string
+  default = "defaultsubnet11"
+}
+
 variable "oci_core_vcn_cidr" {
   type    = string
   default = "10.0.0.0/16"
@@ -86,6 +101,16 @@ variable "kube_api_port" {
   default = 6443
 }
 
+variable "k3s_load_balancer_name" {
+  type    = string
+  default = "k3s internal load balancer"
+}
+
+variable "public_load_balancer_name" {
+  type    = string
+  default = "K3s public LB"
+}
+
 variable "http_lb_port" {
   type    = number
   default = 80
@@ -94,6 +119,16 @@ variable "http_lb_port" {
 variable "https_lb_port" {
   type    = number
   default = 443
+}
+
+variable "PATH_TO_PUBLIC_LB_CERT" {
+  type        = string
+  description = "Path to the public LB https certificate"
+}
+
+variable "PATH_TO_PUBLIC_LB_KEY" {
+  type        = string
+  description = "Path to the public LB key"
 }
 
 variable "k3s_server_pool_size" {
@@ -119,6 +154,11 @@ variable "unique_tag_value" {
 variable "my_public_ip_cidr" {
   type        = string
   description = "My public ip CIDR"
+}
+
+variable "install_nginx_ingress" {
+  type    = bool
+  default = true
 }
 
 variable "install_longhorn" {
