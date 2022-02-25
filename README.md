@@ -169,6 +169,69 @@ rerun this command to reinitialize your working directory. If you forget, other
 commands will detect it and remind you to do so if necessary.
 ```
 
+#### Generate sel signed SSL certificate for the public LB (L7)
+
+**NOTE** If you already own a valid certificate skip this step and set the correct values for the variables: PATH_TO_PUBLIC_LB_CERT and PATH_TO_PUBLIC_LB_KEY
+
+We need to generate the certificates (sel signed) for our public load balancer (Layer 7). To do this we need *openssl*, open a terminal and follow this step:
+
+Generate the key:
+
+```
+openssl genrsa 2048 > privatekey.pem
+Generating RSA private key, 2048 bit long modulus (2 primes)
+.......+++++
+...............+++++
+e is 65537 (0x010001)
+```
+
+Generate the a new certificate request:
+
+```
+openssl req -new -key privatekey.pem -out csr.pem
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:IT
+State or Province Name (full name) [Some-State]:Italy
+Locality Name (eg, city) []:Brescia
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:GL Ltd
+Organizational Unit Name (eg, section) []:IT
+Common Name (e.g. server FQDN or YOUR name) []:testlb.domainexample.com
+Email Address []:email@you.com
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+```
+
+Generate the public CRT:
+
+```
+openssl x509 -req -days 365 -in csr.pem -signkey privatekey.pem -out public.crt
+Signature ok
+subject=C = IT, ST = Italy, L = Brescia, O = GL Ltd, OU = IT, CN = testlb.domainexample.com, emailAddress = email@you.com
+Getting Private key
+```
+
+This is the final result:
+
+```
+ls
+
+csr.pem  privatekey.pem  public.crt
+```
+
+Now set the variables:
+
+* PATH_TO_PUBLIC_LB_CERT: ~/full_path/public.crt
+* PATH_TO_PUBLIC_LB_KEY: ~/full_path/privatekey.pem
+
 ### Oracle provider setup
 
 In the *example/* directory of this repo you need to create a terraform.tfvars file, the file will look like:
@@ -202,19 +265,27 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `k3s_token` | `yes`        | The token of your K3s cluster. [How to](#generate-random-token) generate a random token |
 | `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
+| `PATH_TO_PUBLIC_LB_CERT`  | `yes`  | Path to the public LB certificate. See [how to](#generate-sel-signed-ssl-certificate-for-the-public-lb-l7) generate the certificate |
+| `PATH_TO_PUBLIC_LB_KEY`  | `yes`  | Path to the public LB key. See [how to](#generate-sel-signed-ssl-certificate-for-the-public-lb-l7) generate the key |
 | `compute_shape`  | `no`  | Compute shape to use. Default VM.Standard.A1.Flex. **NOTE** Is mandatory to use this compute shape for provision 4 always free VMs |
 | `os_image_id`  | `no`  | Image id to use. Default image: Canonical-Ubuntu-20.04-aarch64-2022.01.18-0. See [how](#how-to-list-all-the-os-images) to list all available OS images |
+| `oci_core_vcn_dns_label`  | `no`  | VCN DNS label. Default: defaultvcn |
+| `oci_core_subnet_dns_label10`  | `no`  | First subnet DNS label. Default: defaultsubnet10 |
+| `oci_core_subnet_dns_label11`  | `no`  | Second subnet DNS label. Default: defaultsubnet11 |
 | `oci_core_vcn_cidr`  | `no`  | VCN CIDR. Default: oci_core_vcn_cidr |
 | `oci_core_subnet_cidr10`  | `no`  | First subnet CIDR. Default: 10.0.0.0/24 |
 | `oci_core_subnet_cidr11`  | `no`  | Second subnet CIDR. Default: 10.0.1.0/24 |
 | `oci_identity_dynamic_group_name`  | `no`  | Dynamic group name. This dynamic group will contains all the instances of this specific compartment. Default: Compute_Dynamic_Group |
 | `oci_identity_policy_name`  | `no`  | Policy name. This policy will allow dynamic group 'oci_identity_dynamic_group_name' to read OCI api without auth. Default: Compute_To_Oci_Api_Policy |
+| `k3s_load_balancer_name`  | `no`  | Internal LB name. Default: k3s internal load balancer  |
+| `public_load_balancer_name`  | `no`  | Public LB name. Default: K3s public LB  |
 | `kube_api_port`  | `no`  | Kube api default port Default: 6443  |
 | `public_lb_shape`  | `no`  | LB shape for the public LB. Default: flexible. **NOTE** is mandatory to use this kind of shape to provision two always free LB (public and private)  |
 | `http_lb_port`  | `no`  | http port used by the public LB. Default: 80  |
 | `https_lb_port`  | `no`  | http port used by the public LB. Default: 443  |
 | `k3s_server_pool_size`  | `no`  | Number of k3s servers deployed. Default 2  |
 | `k3s_worker_pool_size`  | `no`  | Number of k3s workers deployed. Default 2  |
+| `install_nginx_ingress`  | `no`  | Boolean value, install kubernetes nginx ingress controller instead of Traefik. Default: true. For more information see [Nginx ingress controller](#nginx-ingress-controller) |
 | `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true  |
 | `longhorn_release`  | `no`  | Longhorn release. Default: v1.2.3  |
 | `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
@@ -289,13 +360,14 @@ oci compute image list --compartment-id <compartment_ocid> --operating-system "C
 
 In order to get the maximum resources available within the oracle always free tier, the max amount of the k3s servers and k3s workers must be 2. So the max value for *k3s_server_pool_size* and *k3s_worker_pool_size* **is** 2.
 
-In this setup we use two LB, one internal LB and one public LB. In order to use two LB using the always free resources, one lb must be a [network load balancer](https://docs.oracle.com/en-us/iaas/Content/NetworkLoadBalancer/introducton.htm#Overview) an the other must be a [load balancer](https://docs.oracle.com/en-us/iaas/Content/Balance/Concepts/balanceoverview.htm). The public LB **must** use the *flexible* shape (*public_lb_shape* variable).
+In this setup we use two LB, one internal LB and one public LB (Layer 7). In order to use two LB using the always free resources, one lb must be a [network load balancer](https://docs.oracle.com/en-us/iaas/Content/NetworkLoadBalancer/introducton.htm#Overview) an the other must be a [load balancer](https://docs.oracle.com/en-us/iaas/Content/Balance/Concepts/balanceoverview.htm). The public LB **must** use the *flexible* shape (*public_lb_shape* variable).
 
 ## Notes about K3s
 
 In this environment the High Availability of the K3s cluster is provided using the Embedded DB. More details [here](https://rancher.com/docs/k3s/latest/en/installation/ha-embedded/)
 
-K3s will automatically install [Traefik](https://traefik.io/). Traefik is a modern HTTP reverse proxy and load balancer made to deploy microservices with ease. It simplifies networking complexity while designing, deploying, and running applications. More details [here](https://rancher.com/docs/k3s/latest/en/networking/#traefik-ingress-controller)
+The default installation of K3s install [Traefik](https://traefik.io/) as ingress the controller. In this environment Traefik is replaced by [Nginx ingress controller](https://kubernetes.github.io/ingress-nginx/). To install Traefik as the ingress controller set the variable *install_nginx_ingress* to *false*.
+For more details on Nginx ingress controller see the [Nginx ingress controller](#nginxingress-controller) section.
 
 ## Infrastructure overview
 
@@ -321,6 +393,62 @@ The other resources created by terraform are:
 ## Cluster resource deployed
 
 This setup will automatically install [longhorn](https://longhorn.io/). Longhorn is a *Cloud native distributed block storage for Kubernetes*. To disable the longhorn deployment set *install_longhorn* variable to *false*
+
+### Nginx ingress controller
+
+In this environment [Nginx ingress controller](https://kubernetes.github.io/ingress-nginx/) is used instead of the standard [Traefik](https://traefik.io/) ingress controller.
+
+The installation is the [bare metal](https://kubernetes.github.io/ingress-nginx/deploy/#bare-metal-clusters) installation, the ingress controller then is exposed via a LoadBalancer Service.
+
+```yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-controller-loadbalancer
+  namespace: ingress-nginx
+spec:
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 80
+  type: LoadBalancer
+```
+
+To properly configure all the Forwarded HTTP Headers (L7 Headers) this parameters are added to che ConfigMap:
+
+```yaml
+---
+apiVersion: v1
+data:
+  allow-snippet-annotations: "true"
+  use-forwarded-headers: "true"
+  compute-full-forwarded-for: "true"
+  enable-real-ip: "true"
+  forwarded-for-header: "X-Forwarded-For"
+  proxy-real-ip-cidr: "0.0.0.0/0"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: 1.1.1
+    helm.sh/chart: ingress-nginx-4.0.16
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+```
 
 ## Deploy
 
@@ -447,28 +575,34 @@ inst-lkvem-k3s-workers   Ready    <none>                      5m35s   v1.22.6+k3
 
 #### Public LB check
 
-We can now test the public load balancer, traefik and the security list ingress rules. On your local PC run:
+We can now test the public load balancer, nginx ingress controller and the security list ingress rules. On your local PC run:
 
 ```
 curl -v http://<PUBLIC_LB_IP>
 
-*   Trying <PUBLIC_LB_IP>:80...
+*   Trying PUBLIC_LB_IP:80...
 * TCP_NODELAY set
-* Connected to <PUBLIC_LB_IP> (<PUBLIC_LB_IP>) port 80 (#0)
+* Connected to PUBLIC_LB_IP (PUBLIC_LB_IP) port 80 (#0)
 > GET / HTTP/1.1
-> Host: <PUBLIC_LB_IP>
+> Host: PUBLIC_LB_IP
 > User-Agent: curl/7.68.0
 > Accept: */*
 > 
 * Mark bundle as not supporting multiuse
 < HTTP/1.1 404 Not Found
-< Content-Type: text/plain; charset=utf-8
-< X-Content-Type-Options: nosniff
-< Date: Mon, 21 Feb 2022 11:36:17 GMT
-< Content-Length: 19
+< Date: Fri, 25 Feb 2022 14:03:09 GMT
+< Content-Type: text/html
+< Content-Length: 146
+< Connection: keep-alive
 < 
-404 page not found
-* Connection #0 to host <PUBLIC_LB_IP> left intact
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+* Connection #0 to host PUBLIC_LB_IP left intact
 ```
 
 *404* is a correct response since the cluster is empty. We can test also the https listener/backends:
@@ -476,9 +610,9 @@ curl -v http://<PUBLIC_LB_IP>
 ```
 curl -k -v https://<PUBLIC_LB_IP>
 
-*   Trying <PUBLIC_LB_IP>:443...
+* Trying PUBLIC_LB_IP:443...
 * TCP_NODELAY set
-* Connected to <PUBLIC_LB_IP> (<PUBLIC_LB_IP>) port 443 (#0)
+* Connected to PUBLIC_LB_IP (PUBLIC_LB_IP) port 443 (#0)
 * ALPN, offering h2
 * ALPN, offering http/1.1
 * successfully set certificate verify locations:
@@ -486,39 +620,41 @@ curl -k -v https://<PUBLIC_LB_IP>
   CApath: /etc/ssl/certs
 * TLSv1.3 (OUT), TLS handshake, Client hello (1):
 * TLSv1.3 (IN), TLS handshake, Server hello (2):
-* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
-* TLSv1.3 (IN), TLS handshake, Certificate (11):
-* TLSv1.3 (IN), TLS handshake, CERT verify (15):
-* TLSv1.3 (IN), TLS handshake, Finished (20):
-* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
-* TLSv1.3 (OUT), TLS handshake, Finished (20):
-* SSL connection using TLSv1.3 / TLS_AES_128_GCM_SHA256
-* ALPN, server accepted to use h2
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384
+* ALPN, server accepted to use http/1.1
 * Server certificate:
-*  subject: CN=TRAEFIK DEFAULT CERT
-*  start date: Feb 21 11:30:28 2022 GMT
-*  expire date: Feb 21 11:30:28 2023 GMT
-*  issuer: CN=TRAEFIK DEFAULT CERT
-*  SSL certificate verify result: unable to get local issuer certificate (20), continuing anyway.
-* Using HTTP2, server supports multi-use
-* Connection state changed (HTTP/2 confirmed)
-* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
-* Using Stream ID: 1 (easy handle 0x55cac9ccde10)
-> GET / HTTP/2
-> Host: <PUBLIC_LB_IP>
-> user-agent: curl/7.68.0
-> accept: */*
+*  subject: C=IT; ST=Italy; L=Brescia; O=GL Ltd; OU=IT; CN=testlb.domainexample.com; emailAddress=email@you.com
+*  start date: Feb 25 10:28:29 2022 GMT
+*  expire date: Feb 25 10:28:29 2023 GMT
+*  issuer: C=IT; ST=Italy; L=Brescia; O=GL Ltd; OU=IT; CN=testlb.domainexample.com; emailAddress=email@you.com
+*  SSL certificate verify result: self signed certificate (18), continuing anyway.
+> GET / HTTP/1.1
+> Host: PUBLIC_LB_IP
+> User-Agent: curl/7.68.0
+> Accept: */*
 > 
-* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
-* Connection state changed (MAX_CONCURRENT_STREAMS == 250)!
-< HTTP/2 404 
-< content-type: text/plain; charset=utf-8
-< x-content-type-options: nosniff
-< content-length: 19
-< date: Mon, 21 Feb 2022 11:37:54 GMT
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 404 Not Found
+< Date: Fri, 25 Feb 2022 13:48:19 GMT
+< Content-Type: text/html
+< Content-Length: 146
+< Connection: keep-alive
 < 
-404 page not found
-* Connection #0 to host <PUBLIC_LB_IP> left intact
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+<center><h1>404 Not Found</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+* Connection #0 to host PUBLIC_LB_IP left intact
 ```
 
 #### Longhorn check
@@ -582,7 +718,7 @@ Finally to test all the components of the cluster we can deploy a sample stack. 
 * Wordpress
 
 Each component is made by: one deployment and one service.
-Wordpress and nginx share the same persistent volume (ReadWriteMany with longhorn storage class). The nginx configuration is stored in two ConfigMaps and  the nginx service is exposed by Traefik ingress controller.
+Wordpress and nginx share the same persistent volume (ReadWriteMany with longhorn storage class). The nginx configuration is stored in four ConfigMaps and  the nginx service is exposed by the nginx ingress controller.
 
 Deploy the resources with:
 
@@ -609,7 +745,7 @@ nginx-svc         ClusterIP   10.43.9.202     <none>        80/TCP     80m
 wordpress-svc     ClusterIP   10.43.242.26    <none>        9000/TCP   91m
 ```
 
-Now you are ready to setup WP, open the LB public ip and follow the wizard. **NOTE** nginx and Traefik are configured without virthual host/server name.
+Now you are ready to setup WP, open the LB public ip and follow the wizard. **NOTE** nginx and the Kubernetes Ingress rule are configured without virthual host/server name.
 
 ![k3s wp install](https://garutilorenzo.github.io/images/k3s-wp.png?)
 
