@@ -4,7 +4,7 @@ data "template_cloudinit_config" "k3s_server_tpl" {
 
   part {
     content_type = "text/x-shellscript"
-    content      = templatefile("${path.module}/files/k3s-install-server.sh", { k3s_token = var.k3s_token, is_k3s_server = true, compartment_ocid = var.compartment_ocid, availability_domain = var.availability_domain, k3s_url = oci_network_load_balancer_network_load_balancer.k3s_load_balancer.ip_addresses[0].ip_address, k3s_tls_san = oci_network_load_balancer_network_load_balancer.k3s_load_balancer.ip_addresses[0].ip_address, install_longhorn = var.install_longhorn, longhorn_release = var.longhorn_release })
+    content      = templatefile("${path.module}/files/k3s-install-server.sh", { k3s_token = var.k3s_token, is_k3s_server = true, install_nginx_ingress = var.install_nginx_ingress, compartment_ocid = var.compartment_ocid, availability_domain = var.availability_domain, k3s_url = local.k3s_int_lb_dns_name, k3s_tls_san = local.k3s_int_lb_dns_name, install_longhorn = var.install_longhorn, longhorn_release = var.longhorn_release })
   }
 }
 
@@ -14,7 +14,7 @@ data "template_cloudinit_config" "k3s_worker_tpl" {
 
   part {
     content_type = "text/x-shellscript"
-    content      = templatefile("${path.module}/files/k3s-install-agent.sh", { k3s_token = var.k3s_token, is_k3s_server = false, k3s_url = oci_network_load_balancer_network_load_balancer.k3s_load_balancer.ip_addresses[0].ip_address })
+    content      = templatefile("${path.module}/files/k3s-install-agent.sh", { k3s_token = var.k3s_token, is_k3s_server = false, k3s_url = local.k3s_int_lb_dns_name })
   }
 }
 
