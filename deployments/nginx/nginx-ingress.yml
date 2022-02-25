@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   name: nginx-wp-ingress
 spec:
+  ingressClassName: nginx
   rules:
   - http:
       paths:
