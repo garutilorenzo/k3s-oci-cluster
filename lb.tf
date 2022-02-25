@@ -1,6 +1,6 @@
 resource "oci_load_balancer_load_balancer" "k3s_public_lb" {
   compartment_id = var.compartment_ocid
-  display_name   = "K3s public LB"
+  display_name   = var.public_load_balancer_name
   shape          = var.public_lb_shape
   subnet_ids     = [oci_core_subnet.oci_core_subnet11.id]
 
@@ -19,22 +19,24 @@ resource "oci_load_balancer_load_balancer" "k3s_public_lb" {
   }
 }
 
-# HTTP - TCP
+# HTTP 
 resource "oci_load_balancer_listener" "k3s_http_listener" {
   default_backend_set_name = oci_load_balancer_backend_set.k3s_http_backend_set.name
   load_balancer_id         = oci_load_balancer_load_balancer.k3s_public_lb.id
-  name                     = "K3s_tcp_http_listener"
+  name                     = "K3s_http_listener"
   port                     = var.http_lb_port
-  protocol                 = "TCP"
+  protocol                 = "HTTP"
 }
 
 resource "oci_load_balancer_backend_set" "k3s_http_backend_set" {
   health_checker {
-    protocol = "TCP"
-    port     = var.http_lb_port
+    protocol    = "HTTP"
+    port        = var.http_lb_port
+    url_path    = "/healthz"
+    return_code = 200
   }
   load_balancer_id = oci_load_balancer_load_balancer.k3s_public_lb.id
-  name             = "K3s_tcp_http_backend_set"
+  name             = "K3s_http_backend_set"
   policy           = "ROUND_ROBIN"
 }
 
@@ -50,22 +52,42 @@ resource "oci_load_balancer_backend" "k3s_http_backend" {
   port             = var.http_lb_port
 }
 
-# HTTPS - TCP
+# HTTPS
+resource "oci_load_balancer_certificate" "k3s_https_certificate" {
+  certificate_name = "K3s_lb_https_cert"
+  load_balancer_id = oci_load_balancer_load_balancer.k3s_public_lb.id
+
+  private_key        = file(var.PATH_TO_PUBLIC_LB_KEY)
+  public_certificate = file(var.PATH_TO_PUBLIC_LB_CERT)
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "oci_load_balancer_listener" "k3s_https_listener" {
   default_backend_set_name = oci_load_balancer_backend_set.k3s_https_backend_set.name
   load_balancer_id         = oci_load_balancer_load_balancer.k3s_public_lb.id
-  name                     = "K3s_tcp_https_listener"
+  name                     = "K3s_https_listener"
   port                     = var.https_lb_port
-  protocol                 = "TCP"
+  protocol                 = "HTTP"
+  ssl_configuration {
+    certificate_name        = oci_load_balancer_certificate.k3s_https_certificate.certificate_name
+    cipher_suite_name       = "oci-default-ssl-cipher-suite-v1"
+    verify_peer_certificate = false
+    verify_depth            = 1
+  }
 }
 
 resource "oci_load_balancer_backend_set" "k3s_https_backend_set" {
   health_checker {
-    protocol = "TCP"
-    port     = var.https_lb_port
+    protocol    = "HTTP"
+    port        = var.https_lb_port
+    url_path    = "/healthz"
+    return_code = 200
   }
   load_balancer_id = oci_load_balancer_load_balancer.k3s_public_lb.id
-  name             = "K3s_tcp_https_backend_set"
+  name             = "K3s_https_backend_set"
   policy           = "ROUND_ROBIN"
 }
 
