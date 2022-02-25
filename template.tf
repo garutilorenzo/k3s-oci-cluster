@@ -1,10 +1,5 @@
 resource "oci_core_instance_configuration" "k3s_server_template" {
 
-  # lifecycle {
-  #   create_before_destroy = true
-  #   ignore_changes        = [defined_tags, freeform_tags, instance_details[0].launch_details[0].metadata]
-  # }
-
   compartment_id = var.compartment_ocid
   display_name   = "Ubuntu 20.04 instance k3s server configuration"
 
@@ -69,11 +64,6 @@ resource "oci_core_instance_configuration" "k3s_server_template" {
 }
 
 resource "oci_core_instance_configuration" "k3s_worker_template" {
-
-  # lifecycle {
-  #   create_before_destroy = true
-  #   ignore_changes        = [defined_tags, freeform_tags]
-  # }
 
   compartment_id = var.compartment_ocid
   display_name   = "Ubuntu 20.04 instance k3s worker configuration"
