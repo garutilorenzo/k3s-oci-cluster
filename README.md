@@ -1,3 +1,4 @@
+[![Wordpress CI](https://github.com/garutilorenzo/k3s-oci-cluster/actions/workflows/ci.yml/badge.svg)](https://github.com/garutilorenzo/k3s-oci-cluster/actions/workflows/ci.yml)
 [![GitHub issues](https://img.shields.io/github/issues/garutilorenzo/k3s-oci-cluster)](https://github.com/garutilorenzo/k3s-oci-cluster/issues)
 ![GitHub](https://img.shields.io/github/license/garutilorenzo/k3s-oci-cluster)
 [![GitHub forks](https://img.shields.io/github/forks/garutilorenzo/k3s-oci-cluster)](https://github.com/garutilorenzo/k3s-oci-cluster/network)

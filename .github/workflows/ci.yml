@@ -1,0 +1,40 @@
+name: Terraform CI
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v*
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./example
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Run a Terraform init
+        uses: docker://hashicorp/terraform:light
+        with:
+          entrypoint: terraform
+          args: init
+
+      - name: Run a Terraform validate
+        uses: docker://hashicorp/terraform:light
+        with:
+          entrypoint: terraform
+          args: validate
+
+      - name: Run a Terraform fmt
+        uses: docker://hashicorp/terraform:light
+        with:
+          entrypoint: terraform
+          args: fmt  --recursive -check=true --diff ../
