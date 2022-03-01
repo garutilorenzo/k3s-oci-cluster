@@ -1,8 +1,9 @@
 resource "oci_load_balancer_load_balancer" "k3s_public_lb" {
-  compartment_id = var.compartment_ocid
-  display_name   = var.public_load_balancer_name
-  shape          = var.public_lb_shape
-  subnet_ids     = [oci_core_subnet.oci_core_subnet11.id]
+  compartment_id             = var.compartment_ocid
+  display_name               = var.public_load_balancer_name
+  shape                      = var.public_lb_shape
+  subnet_ids                 = [oci_core_subnet.oci_core_subnet11.id]
+  network_security_group_ids = [oci_core_network_security_group.public_lb_nsg.id]
 
   freeform_tags = {
     "provisioner"           = "terraform"

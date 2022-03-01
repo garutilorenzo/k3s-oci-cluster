@@ -17,7 +17,7 @@ resource "oci_core_subnet" "default_oci_core_subnet10" {
   dns_label         = var.oci_core_subnet_dns_label10
   route_table_id    = oci_core_vcn.default_oci_core_vcn.default_route_table_id
   vcn_id            = oci_core_vcn.default_oci_core_vcn.id
-  security_list_ids = [oci_core_default_security_list.default_security_list.id, oci_core_security_list.custom_security_list.id]
+  security_list_ids = [oci_core_default_security_list.default_security_list.id]
   freeform_tags = {
     "provisioner"           = "terraform"
     "environment"           = "${var.environment}"
@@ -32,7 +32,7 @@ resource "oci_core_subnet" "oci_core_subnet11" {
   dns_label         = var.oci_core_subnet_dns_label11
   route_table_id    = oci_core_vcn.default_oci_core_vcn.default_route_table_id
   vcn_id            = oci_core_vcn.default_oci_core_vcn.id
-  security_list_ids = [oci_core_default_security_list.default_security_list.id, oci_core_security_list.custom_security_list.id]
+  security_list_ids = [oci_core_default_security_list.default_security_list.id]
   freeform_tags = {
     "provisioner"           = "terraform"
     "environment"           = "${var.environment}"
