@@ -27,7 +27,7 @@ resource "oci_network_load_balancer_backend_set" "k3s_kube_api_backend_set" {
     port     = var.kube_api_port
   }
 
-  name                     = "k3s kube api backend"
+  name                     = "k3s_kube_api_backend"
   network_load_balancer_id = oci_network_load_balancer_network_load_balancer.k3s_load_balancer.id
   policy                   = "FIVE_TUPLE"
   is_preserve_source       = true
@@ -41,7 +41,7 @@ resource "oci_network_load_balancer_backend" "k3s_kube_api_backend" {
   count                    = var.k3s_server_pool_size
   backend_set_name         = oci_network_load_balancer_backend_set.k3s_kube_api_backend_set.name
   network_load_balancer_id = oci_network_load_balancer_network_load_balancer.k3s_load_balancer.id
+  name                     = format("%s:%s", data.oci_core_instance_pool_instances.k3s_servers_instances.instances[count.index].id, var.kube_api_port)
   port                     = var.kube_api_port
-
-  target_id = data.oci_core_instance_pool_instances.k3s_servers_instances.instances[count.index].id
+  target_id                = data.oci_core_instance_pool_instances.k3s_servers_instances.instances[count.index].id
 }
