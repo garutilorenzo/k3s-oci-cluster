@@ -46,7 +46,7 @@ private_ips=()
 instance_ocids=$(oci search resource structured-search --query-text "QUERY instance resources where lifeCycleState='RUNNING'"  --query 'data.items[*].identifier' --raw-output | jq -r '.[]' ) 
 
 # Iterate through the array to fetch details of each instance one by one
-for val in ${instance_ocids[@]} ; do
+for val in $${instance_ocids[@]} ; do
 
    echo $val
 
@@ -64,7 +64,7 @@ for val in ${instance_ocids[@]} ; do
    private_ips+=($private_ip)
 done
 
-for i in "${private_ips[@]}"
+for i in "$${private_ips[@]}"
 do
    echo "$i" >> /tmp/private_ips
 done
@@ -126,7 +126,7 @@ RAW_IP = open('/tmp/private_ips', 'r').readlines()
 IPS = [i.replace('\n','') for i in RAW_IP]
 
 nginx_config_template_path = '/root/nginx.tpl'
-nginx_config_path = '/etc/nginx/nginx.conf-test'
+nginx_config_path = '/etc/nginx/nginx.conf'
 
 with open(nginx_config_template_path, 'r') as handle:
     nginx_config_template = handle.read()
