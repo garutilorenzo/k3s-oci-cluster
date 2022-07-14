@@ -41,6 +41,7 @@ resource "oci_core_instance_configuration" "k3s_server_template" {
       create_vnic_details {
         assign_public_ip = true
         subnet_id        = oci_core_subnet.default_oci_core_subnet10.id
+        nsg_ids          = [oci_core_network_security_group.lb_to_instances.id]
       }
 
       display_name = "Ubuntu k3s server template"

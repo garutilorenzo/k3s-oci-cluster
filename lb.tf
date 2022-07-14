@@ -1,9 +1,12 @@
-resource "oci_load_balancer_load_balancer" "k3s_public_lb" {
-  compartment_id             = var.compartment_ocid
-  display_name               = var.public_load_balancer_name
-  shape                      = var.public_lb_shape
-  subnet_ids                 = [oci_core_subnet.oci_core_subnet11.id]
-  network_security_group_ids = [oci_core_network_security_group.public_lb_nsg.id]
+resource "oci_load_balancer_load_balancer" "k3s_load_balancer" {
+  lifecycle {
+    ignore_changes = [network_security_group_ids]
+  }
+
+  compartment_id = var.compartment_ocid
+  display_name   = var.k3s_load_balancer_name
+  shape          = var.public_lb_shape
+  subnet_ids     = [oci_core_subnet.oci_core_subnet11.id]
 
   freeform_tags = {
     "provisioner"           = "terraform"
@@ -12,7 +15,7 @@ resource "oci_load_balancer_load_balancer" "k3s_public_lb" {
   }
 
   ip_mode    = "IPV4"
-  is_private = false
+  is_private = true
 
   shape_details {
     maximum_bandwidth_in_mbps = 10
@@ -20,86 +23,32 @@ resource "oci_load_balancer_load_balancer" "k3s_public_lb" {
   }
 }
 
-# HTTP 
-resource "oci_load_balancer_listener" "k3s_http_listener" {
-  default_backend_set_name = oci_load_balancer_backend_set.k3s_http_backend_set.name
-  load_balancer_id         = oci_load_balancer_load_balancer.k3s_public_lb.id
-  name                     = "K3s_http_listener"
-  port                     = var.http_lb_port
-  protocol                 = "HTTP"
+resource "oci_load_balancer_listener" "k3s_kube_api_listener" {
+  default_backend_set_name = oci_load_balancer_backend_set.k3s_kube_api_backend_set.name
+  load_balancer_id         = oci_load_balancer_load_balancer.k3s_load_balancer.id
+  name                     = "K3s__kube_api_listener"
+  port                     = var.kube_api_port
+  protocol                 = "TCP"
 }
 
-resource "oci_load_balancer_backend_set" "k3s_http_backend_set" {
+resource "oci_load_balancer_backend_set" "k3s_kube_api_backend_set" {
   health_checker {
-    protocol    = "HTTP"
-    port        = var.http_lb_port
-    url_path    = "/healthz"
-    return_code = 200
+    protocol = "TCP"
+    port     = var.kube_api_port
   }
-  load_balancer_id = oci_load_balancer_load_balancer.k3s_public_lb.id
-  name             = "K3s_http_backend_set"
+  load_balancer_id = oci_load_balancer_load_balancer.k3s_load_balancer.id
+  name             = "K3s__kube_api_backend_set"
   policy           = "ROUND_ROBIN"
 }
 
-resource "oci_load_balancer_backend" "k3s_http_backend" {
+resource "oci_load_balancer_backend" "k3s_kube_api_backend" {
   depends_on = [
-    oci_core_instance_pool.k3s_workers,
+    oci_core_instance_pool.k3s_servers,
   ]
 
-  count            = var.k3s_worker_pool_size
-  backendset_name  = oci_load_balancer_backend_set.k3s_http_backend_set.name
-  ip_address       = data.oci_core_instance.k3s_workers_instances_ips[count.index].private_ip
-  load_balancer_id = oci_load_balancer_load_balancer.k3s_public_lb.id
-  port             = var.http_lb_port
-}
-
-# HTTPS
-resource "oci_load_balancer_certificate" "k3s_https_certificate" {
-  certificate_name = "K3s_lb_https_cert"
-  load_balancer_id = oci_load_balancer_load_balancer.k3s_public_lb.id
-
-  private_key        = file(var.PATH_TO_PUBLIC_LB_KEY)
-  public_certificate = file(var.PATH_TO_PUBLIC_LB_CERT)
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "oci_load_balancer_listener" "k3s_https_listener" {
-  default_backend_set_name = oci_load_balancer_backend_set.k3s_https_backend_set.name
-  load_balancer_id         = oci_load_balancer_load_balancer.k3s_public_lb.id
-  name                     = "K3s_https_listener"
-  port                     = var.https_lb_port
-  protocol                 = "HTTP"
-  ssl_configuration {
-    certificate_name        = oci_load_balancer_certificate.k3s_https_certificate.certificate_name
-    cipher_suite_name       = "oci-default-ssl-cipher-suite-v1"
-    verify_peer_certificate = false
-    verify_depth            = 1
-  }
-}
-
-resource "oci_load_balancer_backend_set" "k3s_https_backend_set" {
-  health_checker {
-    protocol    = "HTTP"
-    port        = var.https_lb_port
-    url_path    = "/healthz"
-    return_code = 200
-  }
-  load_balancer_id = oci_load_balancer_load_balancer.k3s_public_lb.id
-  name             = "K3s_https_backend_set"
-  policy           = "ROUND_ROBIN"
-}
-
-resource "oci_load_balancer_backend" "k3s_https_backend" {
-  depends_on = [
-    oci_core_instance_pool.k3s_workers,
-  ]
-
-  count            = var.k3s_worker_pool_size
-  backendset_name  = oci_load_balancer_backend_set.k3s_https_backend_set.name
-  ip_address       = data.oci_core_instance.k3s_workers_instances_ips[count.index].private_ip
-  load_balancer_id = oci_load_balancer_load_balancer.k3s_public_lb.id
-  port             = var.https_lb_port
+  count            = var.k3s_server_pool_size
+  backendset_name  = oci_load_balancer_backend_set.k3s_kube_api_backend_set.name
+  ip_address       = data.oci_core_instance.k3s_servers_instances_ips[count.index].private_ip
+  load_balancer_id = oci_load_balancer_load_balancer.k3s_load_balancer.id
+  port             = var.kube_api_port
 }
