@@ -85,12 +85,12 @@ events {
 stream {
     upstream k3s-http {
         {% for private_ip in private_ips -%}
-        server {{ private_ip }}:30080 max_fails=3 fail_timeout=10s;
+        server {{ private_ip }}:${nginx_ingress_controller_http_nodeport} max_fails=3 fail_timeout=10s;
         {% endfor -%}
     }
     upstream k3s-https {
         {% for private_ip in private_ips -%}
-        server {{ private_ip }}:30443 max_fails=3 fail_timeout=10s;
+        server {{ private_ip }}:${nginx_ingress_controller_https_nodeport} max_fails=3 fail_timeout=10s;
         {% endfor -%}
     }
 
@@ -105,13 +105,13 @@ stream {
     proxy_protocol on;
 
     server {
-        listen 443;
+        listen ${https_lb_port};
         proxy_pass k3s-https;
         proxy_next_upstream on;
     }
 
     server {
-        listen 80;
+        listen ${http_lb_port};
         proxy_pass k3s-http;
         proxy_next_upstream on;
     }

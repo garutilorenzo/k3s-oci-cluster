@@ -91,12 +91,12 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 80
-      nodePort: 30080
+      nodePort: ${nginx_ingress_controller_http_nodeport}
     - name: https
       port: 443
       protocol: TCP
       targetPort: 443
-      nodePort: 30443
+      nodePort: ${nginx_ingress_controller_https_nodeport}
   type: NodePort
 ---
 apiVersion: v1
@@ -104,6 +104,7 @@ data:
   allow-snippet-annotations: "true"
   enable-real-ip: "true"
   proxy-real-ip-cidr: "0.0.0.0/0"
+  proxy-body-size: "20m"
   use-proxy-protocol: "true"
 kind: ConfigMap
 metadata:
@@ -120,7 +121,58 @@ metadata:
 EOF
     kubectl apply -f /root/all-resources.yaml
 fi
+%{ endif }
 
+%{ if install_certmanager }
+if [[ "$first_last" == "first" ]]; then
+    kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${certmanager_release}/cert-manager.yaml
+
+cat << 'EOF' > /root/staging_issuer.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+ name: letsencrypt-staging
+ namespace: cert-manager
+spec:
+ acme:
+   # The ACME server URL
+   server: https://acme-staging-v02.api.letsencrypt.org/directory
+   # Email address used for ACME registration
+   email: ${certmanager_email_address}
+   # Name of a secret used to store the ACME account private key
+   privateKeySecretRef:
+     name: letsencrypt-staging
+   # Enable the HTTP-01 challenge provider
+   solvers:
+   - http01:
+       ingress:
+         class:  nginx
+EOF
+
+cat << 'EOF' > /root/prod_issuer.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+spec:
+  acme:
+    # The ACME server URL
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # Email address used for ACME registration
+    email: ${certmanager_email_address}
+    # Name of a secret used to store the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    # Enable the HTTP-01 challenge provider
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+EOF
+    kubectl create -f prod_issuer.yaml
+    kubectl create -f staging_issuer.yaml
+fi
 %{ endif }
 
 %{ endif }

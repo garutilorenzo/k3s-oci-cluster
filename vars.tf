@@ -115,6 +115,17 @@ variable "https_lb_port" {
   default = 443
 }
 
+variable "nginx_ingress_controller_http_nodeport" {
+  type    = number
+  default = 30080
+}
+
+variable "nginx_ingress_controller_https_nodeport" {
+  type    = number
+  default = 30443
+}
+
+
 variable "PATH_TO_PUBLIC_LB_CERT" {
   type        = string
   description = "Path to the public LB https certificate"
@@ -153,6 +164,21 @@ variable "my_public_ip_cidr" {
 variable "install_nginx_ingress" {
   type    = bool
   default = true
+}
+
+variable "install_certmanager" {
+  type    = bool
+  default = true
+}
+
+variable "certmanager_release" {
+  type    = string
+  default = "v1.8.2"
+}
+
+variable "certmanager_email_address" {
+  type    = string
+  default = "changeme@example.com"
 }
 
 variable "install_longhorn" {
