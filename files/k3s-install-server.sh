@@ -74,7 +74,7 @@ fi
 %{ if install_nginx_ingress }
 if [[ "$first_last" == "first" ]]; then
     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/baremetal/deploy.yaml
-cat << 'EOF' > /root/all-resources.yaml
+cat << 'EOF' > /root/nginx-ingress-resources.yaml
 ---
 apiVersion: v1
 kind: Service
@@ -119,7 +119,7 @@ metadata:
   name: ingress-nginx-controller
   namespace: ingress-nginx
 EOF
-    kubectl apply -f /root/all-resources.yaml
+    kubectl apply -f /root/nginx-ingress-resources.yaml
 fi
 %{ endif }
 
