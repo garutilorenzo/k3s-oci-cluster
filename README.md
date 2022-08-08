@@ -358,12 +358,12 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 80
-      nodePort: ${nginx_ingress_controller_http_nodeport}
+      nodePort: ${nginx_ingress_controller_http_nodeport} # default to 30080
     - name: https
       port: 443
       protocol: TCP
       targetPort: 443
-      nodePort: ${nginx_ingress_controller_https_nodeport}
+      nodePort: ${nginx_ingress_controller_https_nodeport} # default to 30443
   type: NodePort
 ```
 
@@ -392,11 +392,11 @@ metadata:
   namespace: ingress-nginx
 ```
 
-**NOTE** to use nginx ingress controller with the proxy protocol enabled on each worker will be installed nginx. The configuation of nginx will:
+**NOTE** to use nginx ingress controller with the proxy protocol enabled, an external nginx instance is used as proxy. Nginx will be installed on each worker node and the configuation of nginx will:
 
 * listen in proxy protocol mode
-* forward the traffic from port 80 to nginx_ingress_controller_http_nodeport on any server of the cluster
-* forward the traffic from port 443 to nginx_ingress_controller_https_nodeport on any server of the cluster
+* forward the traffic from port 80 to nginx_ingress_controller_http_nodeport (default to 30080) on any server of the cluster
+* forward the traffic from port 443 to nginx_ingress_controller_https_nodeport (default to 30443) on any server of the cluster
 
 ### Cert-manager
 
