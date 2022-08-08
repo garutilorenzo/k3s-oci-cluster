@@ -125,17 +125,6 @@ variable "nginx_ingress_controller_https_nodeport" {
   default = 30443
 }
 
-
-variable "PATH_TO_PUBLIC_LB_CERT" {
-  type        = string
-  description = "Path to the public LB https certificate"
-}
-
-variable "PATH_TO_PUBLIC_LB_KEY" {
-  type        = string
-  description = "Path to the public LB key"
-}
-
 variable "k3s_server_pool_size" {
   type    = number
   default = 2
