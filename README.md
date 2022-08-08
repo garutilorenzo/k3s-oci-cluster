@@ -398,6 +398,10 @@ metadata:
 * forward the traffic from port 80 to nginx_ingress_controller_http_nodeport (default to 30080) on any server of the cluster
 * forward the traffic from port 443 to nginx_ingress_controller_https_nodeport (default to 30443) on any server of the cluster
 
+This is the final result:
+
+Client -> Public L4 LB -> nginx proxy (with proxy protocol enabled) -> nginx ingress (with proxy protocol enabled) -> k3s service -> pod(s)
+
 ### Cert-manager
 
 [cert-manager](https://cert-manager.io/docs/) is used to issue certificates from a variety of supported source. To use cert-manager take a look at [this](deployments/nginx/nginx-ingress-cert-manager.yml) example. To use cert-manager and get the certificate you **need** set on your DNS configuration the public ip address of the load balancer.
