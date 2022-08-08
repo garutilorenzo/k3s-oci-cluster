@@ -1,7 +1,7 @@
 resource "oci_core_instance_pool" "k3s_workers" {
 
   depends_on = [
-    oci_network_load_balancer_network_load_balancer.k3s_load_balancer,
+    oci_load_balancer_load_balancer.k3s_load_balancer,
   ]
 
   lifecycle {

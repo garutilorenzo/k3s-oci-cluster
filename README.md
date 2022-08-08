@@ -170,69 +170,6 @@ rerun this command to reinitialize your working directory. If you forget, other
 commands will detect it and remind you to do so if necessary.
 ```
 
-#### Generate sel signed SSL certificate for the public LB (L7)
-
-**NOTE** If you already own a valid certificate skip this step and set the correct values for the variables: PATH_TO_PUBLIC_LB_CERT and PATH_TO_PUBLIC_LB_KEY
-
-We need to generate the certificates (sel signed) for our public load balancer (Layer 7). To do this we need *openssl*, open a terminal and follow this step:
-
-Generate the key:
-
-```
-openssl genrsa 2048 > privatekey.pem
-Generating RSA private key, 2048 bit long modulus (2 primes)
-.......+++++
-...............+++++
-e is 65537 (0x010001)
-```
-
-Generate the a new certificate request:
-
-```
-openssl req -new -key privatekey.pem -out csr.pem
-You are about to be asked to enter information that will be incorporated
-into your certificate request.
-What you are about to enter is what is called a Distinguished Name or a DN.
-There are quite a few fields but you can leave some blank
-For some fields there will be a default value,
-If you enter '.', the field will be left blank.
------
-Country Name (2 letter code) [AU]:IT
-State or Province Name (full name) [Some-State]:Italy
-Locality Name (eg, city) []:Brescia
-Organization Name (eg, company) [Internet Widgits Pty Ltd]:GL Ltd
-Organizational Unit Name (eg, section) []:IT
-Common Name (e.g. server FQDN or YOUR name) []:testlb.domainexample.com
-Email Address []:email@you.com
-
-Please enter the following 'extra' attributes
-to be sent with your certificate request
-A challenge password []:
-An optional company name []:
-```
-
-Generate the public CRT:
-
-```
-openssl x509 -req -days 365 -in csr.pem -signkey privatekey.pem -out public.crt
-Signature ok
-subject=C = IT, ST = Italy, L = Brescia, O = GL Ltd, OU = IT, CN = testlb.domainexample.com, emailAddress = email@you.com
-Getting Private key
-```
-
-This is the final result:
-
-```
-ls
-
-csr.pem  privatekey.pem  public.crt
-```
-
-Now set the variables:
-
-* PATH_TO_PUBLIC_LB_CERT: ~/full_path/public.crt
-* PATH_TO_PUBLIC_LB_KEY: ~/full_path/privatekey.pem
-
 ### Oracle provider setup
 
 In the *example/* directory of this repo you need to create a terraform.tfvars file, the file will look like:
@@ -266,8 +203,6 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `k3s_token` | `yes`        | The token of your K3s cluster. [How to](#generate-random-token) generate a random token |
 | `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
-| `PATH_TO_PUBLIC_LB_CERT`  | `yes`  | Path to the public LB certificate. See [how to](#generate-sel-signed-ssl-certificate-for-the-public-lb-l7) generate the certificate |
-| `PATH_TO_PUBLIC_LB_KEY`  | `yes`  | Path to the public LB key. See [how to](#generate-sel-signed-ssl-certificate-for-the-public-lb-l7) generate the key |
 | `compute_shape`  | `no`  | Compute shape to use. Default VM.Standard.A1.Flex. **NOTE** Is mandatory to use this compute shape for provision 4 always free VMs |
 | `os_image_id`  | `no`  | Image id to use. Default image: Canonical-Ubuntu-20.04-aarch64-2022.01.18-0. See [how](#how-to-list-all-the-os-images) to list all available OS images |
 | `oci_core_vcn_dns_label`  | `no`  | VCN DNS label. Default: defaultvcn |
@@ -287,12 +222,17 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `k3s_server_pool_size`  | `no`  | Number of k3s servers deployed. Default 2  |
 | `k3s_worker_pool_size`  | `no`  | Number of k3s workers deployed. Default 2  |
 | `install_nginx_ingress`  | `no`  | Boolean value, install kubernetes nginx ingress controller instead of Traefik. Default: true. For more information see [Nginx ingress controller](#nginx-ingress-controller) |
+nginx_ingress_controller_http_nodeport
+| `nginx_ingress_controller_http_nodeport`  | `30080`  | NodePort where nginx ingress will listen for http traffic  |
+| `nginx_ingress_controller_https_nodeport`  | `30443`  | NodePort where nginx ingress will listen for https traffic  |
 | `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true  |
 | `longhorn_release`  | `no`  | Longhorn release. Default: v1.2.3  |
+| `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
+| `longhorn_release`  | `no`  | Cert manager release. Default: v1.8.2  |
+| `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Defaul: changeme@example.com  |
 | `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
 | `unique_tag_value`  | `no`  | Unique value used with  unique_tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster |
 | `PATH_TO_PUBLIC_KEY`     | `no`       | Path to your public ssh key (Default: "~/.ssh/id_rsa.pub) |
-| `PATH_TO_PRIVATE_KEY` | `no`        | Path to your private ssh key (Default: "~/.ssh/id_rsa) |
 
 #### Generate random token
 
@@ -399,7 +339,7 @@ This setup will automatically install [longhorn](https://longhorn.io/). Longhorn
 
 In this environment [Nginx ingress controller](https://kubernetes.github.io/ingress-nginx/) is used instead of the standard [Traefik](https://traefik.io/) ingress controller.
 
-The installation is the [bare metal](https://kubernetes.github.io/ingress-nginx/deploy/#bare-metal-clusters) installation, the ingress controller then is exposed via a LoadBalancer Service.
+The installation is the [bare metal](https://kubernetes.github.io/ingress-nginx/deploy/#bare-metal-clusters) installation, the ingress controller then is exposed via a NodePort Service.
 
 ```yaml
 ---
@@ -418,25 +358,26 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 80
+      nodePort: ${nginx_ingress_controller_http_nodeport} # default to 30080
     - name: https
       port: 443
       protocol: TCP
-      targetPort: 80
-  type: LoadBalancer
+      targetPort: 443
+      nodePort: ${nginx_ingress_controller_https_nodeport} # default to 30443
+  type: NodePort
 ```
 
-To properly configure all the Forwarded HTTP Headers (L7 Headers) this parameters are added to che ConfigMap:
+To get the real ip address of the clients using a public L4 load balancer we need to use the proxy protocol feature of nginx ingress controller:
 
 ```yaml
 ---
 apiVersion: v1
 data:
   allow-snippet-annotations: "true"
-  use-forwarded-headers: "true"
-  compute-full-forwarded-for: "true"
   enable-real-ip: "true"
-  forwarded-for-header: "X-Forwarded-For"
   proxy-real-ip-cidr: "0.0.0.0/0"
+  proxy-body-size: "20m"
+  use-proxy-protocol: "true"
 kind: ConfigMap
 metadata:
   labels:
@@ -450,6 +391,20 @@ metadata:
   name: ingress-nginx-controller
   namespace: ingress-nginx
 ```
+
+**NOTE** to use nginx ingress controller with the proxy protocol enabled, an external nginx instance is used as proxy. Nginx will be installed on each worker node and the configuation of nginx will:
+
+* listen in proxy protocol mode
+* forward the traffic from port 80 to nginx_ingress_controller_http_nodeport (default to 30080) on any server of the cluster
+* forward the traffic from port 443 to nginx_ingress_controller_https_nodeport (default to 30443) on any server of the cluster
+
+This is the final result:
+
+Client -> Public L4 LB -> nginx proxy (with proxy protocol enabled) -> nginx ingress (with proxy protocol enabled) -> k3s service -> pod(s)
+
+### Cert-manager
+
+[cert-manager](https://cert-manager.io/docs/) is used to issue certificates from a variety of supported source. To use cert-manager take a look at [nginx-ingress-cert-manager.yml](deployments/nginx/nginx-ingress-cert-manager.yml) and [nginx-configmap-cert-manager.yml](deployments/nginx/nginx-configmap-cert-manager.yml) example. To use cert-manager and get the certificate you **need** set on your DNS configuration the public ip address of the load balancer.
 
 ## Deploy
 

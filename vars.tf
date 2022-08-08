@@ -33,12 +33,6 @@ variable "PATH_TO_PUBLIC_KEY" {
   description = "Path to your public key"
 }
 
-variable "PATH_TO_PRIVATE_KEY" {
-  type        = string
-  default     = "~/.ssh/id_rsa"
-  description = "Path to your private key"
-}
-
 variable "os_image_id" {
   type    = string
   default = "ocid1.image.oc1.eu-zurich-1.aaaaaaaag2uyozo7266bmg26j5ixvi42jhaujso2pddpsigtib6vfnqy5f6q" # Canonical-Ubuntu-20.04-aarch64-2022.01.18-0
@@ -121,14 +115,14 @@ variable "https_lb_port" {
   default = 443
 }
 
-variable "PATH_TO_PUBLIC_LB_CERT" {
-  type        = string
-  description = "Path to the public LB https certificate"
+variable "nginx_ingress_controller_http_nodeport" {
+  type    = number
+  default = 30080
 }
 
-variable "PATH_TO_PUBLIC_LB_KEY" {
-  type        = string
-  description = "Path to the public LB key"
+variable "nginx_ingress_controller_https_nodeport" {
+  type    = number
+  default = 30443
 }
 
 variable "k3s_server_pool_size" {
@@ -159,6 +153,21 @@ variable "my_public_ip_cidr" {
 variable "install_nginx_ingress" {
   type    = bool
   default = true
+}
+
+variable "install_certmanager" {
+  type    = bool
+  default = true
+}
+
+variable "certmanager_release" {
+  type    = string
+  default = "v1.8.2"
+}
+
+variable "certmanager_email_address" {
+  type    = string
+  default = "changeme@example.com"
 }
 
 variable "install_longhorn" {

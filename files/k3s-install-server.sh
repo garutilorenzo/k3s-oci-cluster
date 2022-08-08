@@ -74,9 +74,105 @@ fi
 %{ if install_nginx_ingress }
 if [[ "$first_last" == "first" ]]; then
     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/baremetal/deploy.yaml
-    kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/nginx-ingress-config/all-resources.yml
+cat << 'EOF' > /root/nginx-ingress-resources.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-controller-loadbalancer
+  namespace: ingress-nginx
+spec:
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
+      nodePort: ${nginx_ingress_controller_http_nodeport}
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 443
+      nodePort: ${nginx_ingress_controller_https_nodeport}
+  type: NodePort
+---
+apiVersion: v1
+data:
+  allow-snippet-annotations: "true"
+  enable-real-ip: "true"
+  proxy-real-ip-cidr: "0.0.0.0/0"
+  proxy-body-size: "20m"
+  use-proxy-protocol: "true"
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: ingress-nginx
+    app.kubernetes.io/version: 1.1.1
+    helm.sh/chart: ingress-nginx-4.0.16
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+EOF
+    kubectl apply -f /root/nginx-ingress-resources.yaml
 fi
+%{ endif }
 
+%{ if install_certmanager }
+if [[ "$first_last" == "first" ]]; then
+    kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${certmanager_release}/cert-manager.yaml
+
+cat << 'EOF' > /root/staging_issuer.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+ name: letsencrypt-staging
+ namespace: cert-manager
+spec:
+ acme:
+   # The ACME server URL
+   server: https://acme-staging-v02.api.letsencrypt.org/directory
+   # Email address used for ACME registration
+   email: ${certmanager_email_address}
+   # Name of a secret used to store the ACME account private key
+   privateKeySecretRef:
+     name: letsencrypt-staging
+   # Enable the HTTP-01 challenge provider
+   solvers:
+   - http01:
+       ingress:
+         class:  nginx
+EOF
+
+cat << 'EOF' > /root/prod_issuer.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+spec:
+  acme:
+    # The ACME server URL
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # Email address used for ACME registration
+    email: ${certmanager_email_address}
+    # Name of a secret used to store the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    # Enable the HTTP-01 challenge provider
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+EOF
+    kubectl create -f prod_issuer.yaml
+    kubectl create -f staging_issuer.yaml
+fi
 %{ endif }
 
 %{ endif }
