@@ -228,7 +228,7 @@ nginx_ingress_controller_http_nodeport
 | `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true  |
 | `longhorn_release`  | `no`  | Longhorn release. Default: v1.2.3  |
 | `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
-| `longhorn_release`  | `no`  | Cert manager release. Default: v1.8.2  |
+| `certmanager_release`  | `no`  | Cert manager release. Default: v1.8.2  |
 | `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Defaul: changeme@example.com  |
 | `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
 | `unique_tag_value`  | `no`  | Unique value used with  unique_tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster |
