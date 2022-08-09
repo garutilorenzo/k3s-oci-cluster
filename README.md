@@ -392,7 +392,7 @@ metadata:
   namespace: ingress-nginx
 ```
 
-**NOTE** to use nginx ingress controller with the proxy protocol enabled, an external nginx instance is used as proxy. Nginx will be installed on each worker node and the configuation of nginx will:
+**NOTE** to use nginx ingress controller with the proxy protocol enabled, an external nginx instance is used as proxy (since OCI LB doesn't support proxy protocol at the moment). Nginx will be installed on each worker node and the configuation of nginx will:
 
 * listen in proxy protocol mode
 * forward the traffic from port 80 to nginx_ingress_controller_http_nodeport (default to 30080) on any server of the cluster
