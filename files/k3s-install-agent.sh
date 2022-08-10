@@ -1,15 +1,15 @@
 #!/bin/bash
 
 wait_lb() {
-    while [ true ]
-    do
-        curl --output /dev/null --silent -k https://${k3s_url}:6443
-        if [[ "$?" -eq 0 ]]; then
-            break
-        fi
-        sleep 5
-        echo "wait for LB"
-    done
+while [ true ]
+do
+  curl --output /dev/null --silent -k https://${k3s_url}:6443
+  if [[ "$?" -eq 0 ]]; then
+    break
+  fi
+  sleep 5
+  echo "wait for LB"
+done
 }
 
 # Disable firewall 
@@ -34,8 +34,8 @@ flannel_iface=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)')
 wait_lb
 
 until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} K3S_URL=https://${k3s_url}:6443 sh -s - --node-ip $local_ip --flannel-iface $flannel_iface); do
-    echo 'k3s did not install correctly'
-    sleep 2
+  echo 'k3s did not install correctly'
+  sleep 2
 done
 
 cat << 'EOF' > /root/find_ips.sh
@@ -47,26 +47,26 @@ instance_ocids=$(oci search resource structured-search --query-text "QUERY insta
 
 # Iterate through the array to fetch details of each instance one by one
 for val in $${instance_ocids[@]} ; do
+  
+  echo $val
 
-   echo $val
-
-   # Get name of the instance
-   instance_name=$(oci compute instance get --instance-id $val --raw-output --query 'data."display-name"')
-   echo $instance_name
+  # Get name of the instance
+  instance_name=$(oci compute instance get --instance-id $val --raw-output --query 'data."display-name"')
+  echo $instance_name
 
 
-   # Get Public Ip of the instance
-   public_ip=$(oci compute instance list-vnics --instance-id $val --raw-output --query 'data[0]."public-ip"')
-   echo $public_ip
+  # Get Public Ip of the instance
+  public_ip=$(oci compute instance list-vnics --instance-id $val --raw-output --query 'data[0]."public-ip"')
+  echo $public_ip
 
-   private_ip=$(oci compute instance list-vnics --instance-id $val --raw-output --query 'data[0]."private-ip"')
-   echo $private_ip
-   private_ips+=($private_ip)
+  private_ip=$(oci compute instance list-vnics --instance-id $val --raw-output --query 'data[0]."private-ip"')
+  echo $private_ip
+  private_ips+=($private_ip)
 done
 
 for i in "$${private_ips[@]}"
 do
-   echo "$i" >> /tmp/private_ips
+  echo "$i" >> /tmp/private_ips
 done
 EOF
 
@@ -78,43 +78,43 @@ worker_processes auto;
 pid /run/nginx.pid;
 
 events {
-    worker_connections 768;
-    # multi_accept on;
+  worker_connections 768;
+  # multi_accept on;
 }
 
 stream {
-    upstream k3s-http {
-        {% for private_ip in private_ips -%}
-        server {{ private_ip }}:${nginx_ingress_controller_http_nodeport} max_fails=3 fail_timeout=10s;
-        {% endfor -%}
-    }
-    upstream k3s-https {
-        {% for private_ip in private_ips -%}
-        server {{ private_ip }}:${nginx_ingress_controller_https_nodeport} max_fails=3 fail_timeout=10s;
-        {% endfor -%}
-    }
+  upstream k3s-http {
+    {% for private_ip in private_ips -%}
+    server {{ private_ip }}:${nginx_ingress_controller_http_nodeport} max_fails=3 fail_timeout=10s;
+    {% endfor -%}
+  }
+  upstream k3s-https {
+    {% for private_ip in private_ips -%}
+    server {{ private_ip }}:${nginx_ingress_controller_https_nodeport} max_fails=3 fail_timeout=10s;
+    {% endfor -%}
+  }
 
-    log_format basic '$remote_addr [$time_local] '
-                 '$protocol $status $bytes_sent $bytes_received '
-                 '$session_time "$upstream_addr" '
-                 '"$upstream_bytes_sent" "$upstream_bytes_received" "$upstream_connect_time"';
+  log_format basic '$remote_addr [$time_local] '
+    '$protocol $status $bytes_sent $bytes_received '
+    '$session_time "$upstream_addr" '
+    '"$upstream_bytes_sent" "$upstream_bytes_received" "$upstream_connect_time"';
 
-    access_log /var/log/nginx/k3s_access.log basic;
-    error_log  /var/log/nginx/k3s_error.log;
+  access_log /var/log/nginx/k3s_access.log basic;
+  error_log  /var/log/nginx/k3s_error.log;
 
-    proxy_protocol on;
+  proxy_protocol on;
 
-    server {
-        listen ${https_lb_port};
-        proxy_pass k3s-https;
-        proxy_next_upstream on;
-    }
+  server {
+    listen ${https_lb_port};
+    proxy_pass k3s-https;
+    proxy_next_upstream on;
+  }
 
-    server {
-        listen ${http_lb_port};
-        proxy_pass k3s-http;
-        proxy_next_upstream on;
-    }
+  server {
+    listen ${http_lb_port};
+    proxy_pass k3s-http;
+    proxy_next_upstream on;
+  }
 }
 EOF
 
