@@ -61,7 +61,8 @@ EOF
 }
 
 render_staging_issuer(){
-cat << 'EOF' > /root/staging_issuer.yaml
+STAGING_ISSUER_RESOURCE=$1
+cat << 'EOF' > $STAGING_ISSUER_RESOURCE
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -85,7 +86,8 @@ EOF
 }
 
 render_prod_issuer(){
-cat << 'EOF' > /root/prod_issuer.yaml
+PROD_ISSUER_RESOURCE=$1
+cat << 'EOF' > $PROD_ISSUER_RESOURCE
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -178,10 +180,10 @@ fi
 %{ if install_certmanager }
 if [[ "$first_last" == "first" ]]; then
   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${certmanager_release}/cert-manager.yaml
-  render_staging_issuer
-  render_prod_issuer
-  kubectl create -f prod_issuer.yaml
-  kubectl create -f staging_issuer.yaml
+  render_staging_issuer /root/staging_issuer.yaml
+  render_prod_issuer /root/prod_issuer.yaml
+  kubectl create -f /root/prod_issuer.yaml
+  kubectl create -f /root/staging_issuer.yaml
 fi
 %{ endif }
 
