@@ -68,10 +68,10 @@ resource "oci_core_network_security_group_security_rule" "allow_kubeapi_from_all
   }
 }
 
-resource "oci_core_network_security_group" "lb_to_instances" {
+resource "oci_core_network_security_group" "lb_to_instances_http" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.default_oci_core_vcn.id
-  display_name   = "Public LB to Compute Instances NSG"
+  display_name   = "Public LB to K3s workers Compute Instances NSG"
 
   freeform_tags = {
     "provisioner"           = "terraform"
@@ -81,7 +81,7 @@ resource "oci_core_network_security_group" "lb_to_instances" {
 }
 
 resource "oci_core_network_security_group_security_rule" "nsg_to_instances_http" {
-  network_security_group_id = oci_core_network_security_group.lb_to_instances.id
+  network_security_group_id = oci_core_network_security_group.lb_to_instances_http.id
   direction                 = "INGRESS"
   protocol                  = 6 # tcp
 
@@ -100,7 +100,7 @@ resource "oci_core_network_security_group_security_rule" "nsg_to_instances_http"
 }
 
 resource "oci_core_network_security_group_security_rule" "nsg_to_instances_https" {
-  network_security_group_id = oci_core_network_security_group.lb_to_instances.id
+  network_security_group_id = oci_core_network_security_group.lb_to_instances_http.id
   direction                 = "INGRESS"
   protocol                  = 6 # tcp
 
@@ -114,6 +114,37 @@ resource "oci_core_network_security_group_security_rule" "nsg_to_instances_https
     destination_port_range {
       max = var.https_lb_port
       min = var.https_lb_port
+    }
+  }
+}
+
+resource "oci_core_network_security_group" "lb_to_instances_kubeapi" {
+  compartment_id = var.compartment_ocid
+  vcn_id         = oci_core_vcn.default_oci_core_vcn.id
+  display_name   = "Public LB to K3s master Compute Instances NSG (kubeapi)"
+
+  freeform_tags = {
+    "provisioner"           = "terraform"
+    "environment"           = "${var.environment}"
+    "${var.unique_tag_key}" = "${var.unique_tag_value}"
+  }
+}
+
+resource "oci_core_network_security_group_security_rule" "nsg_to_instances_kubeapi" {
+  network_security_group_id = oci_core_network_security_group.lb_to_instances_kubeapi.id
+  direction                 = "INGRESS"
+  protocol                  = 6 # tcp
+
+  description = "Allow HTTPS from all"
+
+  source      = oci_core_network_security_group.public_lb_nsg.id
+  source_type = "NETWORK_SECURITY_GROUP"
+  stateless   = false
+
+  tcp_options {
+    destination_port_range {
+      max = var.kube_api_port
+      min = var.kube_api_port
     }
   }
 }
