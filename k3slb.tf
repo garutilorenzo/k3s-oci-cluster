@@ -94,7 +94,7 @@ resource "oci_network_load_balancer_listener" "k3s_kubeapi_listener" {
 }
 
 resource "oci_network_load_balancer_backend_set" "k3s_kubeapi_backend_set" {
-  count                     = var.expose_kubeapi ? 1 : 0
+  count = var.expose_kubeapi ? 1 : 0
 
   health_checker {
     protocol = "TCP"
@@ -112,7 +112,7 @@ resource "oci_network_load_balancer_backend" "k3s_kubeapi_backend" {
     oci_core_instance_pool.k3s_servers,
   ]
 
-  count                    = var.expose_kubeapi ? var.k3s_server_pool_size : 0 
+  count                    = var.expose_kubeapi ? var.k3s_server_pool_size : 0
   backend_set_name         = oci_network_load_balancer_backend_set.k3s_kubeapi_backend_set[0].name
   network_load_balancer_id = oci_network_load_balancer_network_load_balancer.k3s_public_lb.id
   name                     = format("%s:%s", data.oci_core_instance_pool_instances.k3s_servers_instances.instances[count.index].id, var.kube_api_port)
