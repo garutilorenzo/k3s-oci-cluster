@@ -232,6 +232,7 @@ nginx_ingress_controller_http_nodeport
 | `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Defaul: changeme@example.com  |
 | `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
 | `unique_tag_value`  | `no`  | Unique value used with  unique_tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster |
+| `expose_kubeapi`  | `false`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
 | `PATH_TO_PUBLIC_KEY`     | `no`       | Path to your public ssh key (Default: "~/.ssh/id_rsa.pub) |
 
 #### Generate random token
