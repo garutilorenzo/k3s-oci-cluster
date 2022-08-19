@@ -136,7 +136,7 @@ resource "oci_core_network_security_group_security_rule" "nsg_to_instances_kubea
   direction                 = "INGRESS"
   protocol                  = 6 # tcp
 
-  description = "Allow HTTPS from all"
+  description = "Allow kubeapi access from my_public_ip_cidr"
 
   source      = oci_core_network_security_group.public_lb_nsg.id
   source_type = "NETWORK_SECURITY_GROUP"
