@@ -186,6 +186,13 @@ if [[ "$first_last" == "first" ]]; then
   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${certmanager_release}/cert-manager.yaml
   render_staging_issuer /root/staging_issuer.yaml
   render_prod_issuer /root/prod_issuer.yaml
+
+  # Wait cert-manager to be ready
+  until kubectl get pods -n cert-manager | grep 'Running'; do
+    echo 'Waiting for cert-manager to be ready'
+    sleep 15
+  done
+
   kubectl create -f /root/prod_issuer.yaml
   kubectl create -f /root/staging_issuer.yaml
 fi
