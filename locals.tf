@@ -1,3 +1,3 @@
-# locals {
-#   k3s_int_lb_dns_name = format("%s.%s.%s.oraclevcn.com", replace(var.k3s_load_balancer_name, " ", "-"), var.oci_core_subnet_dns_label11, var.oci_core_vcn_dns_label)
-# }
+locals {
+  public_lb_ip = [for interface in oci_network_load_balancer_network_load_balancer.k3s_public_lb.ip_addresses : interface.ip_address if interface.is_public == true]
+}
