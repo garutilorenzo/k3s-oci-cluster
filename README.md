@@ -223,8 +223,8 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `k3s_worker_pool_size`  | `no`  | Number of k3s workers deployed. Default 2  |
 | `install_nginx_ingress`  | `no`  | Boolean value, install kubernetes nginx ingress controller instead of Traefik. Default: true. For more information see [Nginx ingress controller](#nginx-ingress-controller) |
 nginx_ingress_controller_http_nodeport
-| `nginx_ingress_controller_http_nodeport`  | `30080`  | NodePort where nginx ingress will listen for http traffic  |
-| `nginx_ingress_controller_https_nodeport`  | `30443`  | NodePort where nginx ingress will listen for https traffic  |
+| `nginx_ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
+| `nginx_ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
 | `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true  |
 | `longhorn_release`  | `no`  | Longhorn release. Default: v1.2.3  |
 | `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
@@ -232,7 +232,7 @@ nginx_ingress_controller_http_nodeport
 | `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Defaul: changeme@example.com  |
 | `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
 | `unique_tag_value`  | `no`  | Unique value used with  unique_tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster |
-| `expose_kubeapi`  | `false`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
+| `expose_kubeapi`  | `no`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
 | `PATH_TO_PUBLIC_KEY`     | `no`       | Path to your public ssh key (Default: "~/.ssh/id_rsa.pub) |
 
 #### Generate random token
