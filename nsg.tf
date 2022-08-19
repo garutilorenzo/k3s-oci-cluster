@@ -131,6 +131,7 @@ resource "oci_core_network_security_group" "lb_to_instances_kubeapi" {
 }
 
 resource "oci_core_network_security_group_security_rule" "nsg_to_instances_kubeapi" {
+  count                     = var.expose_kubeapi ? 1 : 0
   network_security_group_id = oci_core_network_security_group.lb_to_instances_kubeapi.id
   direction                 = "INGRESS"
   protocol                  = 6 # tcp
