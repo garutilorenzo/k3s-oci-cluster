@@ -136,17 +136,21 @@ first_last="last"
 disable_traefik="--disable traefik"
 %{ endif }
 
+%{ if expose_kubeapi }
+tls_extra_san="--tls-san ${k3s_tls_san_public}"
+%{ endif }
+
 if [[ "$first_instance" == "$instance_id" ]]; then
   echo "I'm the first yeeee: Cluster init!"
   first_last="first"
-  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --cluster-init $disable_traefik --node-ip $local_ip --advertise-address $local_ip --flannel-iface $flannel_iface --tls-san ${k3s_tls_san} --tls-san ${k3s_tls_san_public}); do
+  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --cluster-init $disable_traefik --node-ip $local_ip --advertise-address $local_ip --flannel-iface $flannel_iface --tls-san ${k3s_tls_san} $tls_extra_san); do
     echo 'k3s did not install correctly'
     sleep 2
   done
 else
   echo ":( Cluster join"
   wait_lb
-  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --server https://${k3s_url}:6443 $disable_traefik --node-ip $local_ip --advertise-address $local_ip --flannel-iface $flannel_iface --tls-san ${k3s_tls_san} --tls-san ${k3s_tls_san_public}); do
+  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --server https://${k3s_url}:6443 $disable_traefik --node-ip $local_ip --advertise-address $local_ip --flannel-iface $flannel_iface --tls-san ${k3s_tls_san} $tls_extra_san); do
     echo 'k3s did not install correctly'
     sleep 2
   done
