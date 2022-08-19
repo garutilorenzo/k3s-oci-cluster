@@ -48,6 +48,26 @@ resource "oci_core_network_security_group_security_rule" "allow_https_from_all" 
   }
 }
 
+resource "oci_core_network_security_group_security_rule" "allow_kubeapi_from_all" {
+  count                     = var.expose_kubeapi ? 1 : 0
+  network_security_group_id = oci_core_network_security_group.public_lb_nsg.id
+  direction                 = "INGRESS"
+  protocol                  = 6 # tcp
+
+  description = "Allow HTTPS from all"
+
+  source      = var.my_public_ip_cidr
+  source_type = "CIDR_BLOCK"
+  stateless   = false
+
+  tcp_options {
+    destination_port_range {
+      max = var.kube_api_port
+      min = var.kube_api_port
+    }
+  }
+}
+
 resource "oci_core_network_security_group" "lb_to_instances" {
   compartment_id = var.compartment_ocid
   vcn_id         = oci_core_vcn.default_oci_core_vcn.id

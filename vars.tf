@@ -179,3 +179,8 @@ variable "longhorn_release" {
   type    = string
   default = "v1.2.3"
 }
+
+variable "expose_kubeapi" {
+  type    = bool
+  default = false
+}
