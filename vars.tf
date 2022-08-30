@@ -19,8 +19,8 @@ variable "environment" {
 }
 
 variable "k3s_version" {
-  type = string
-  default = "latest"
+  type        = string
+  default     = "latest"
   description = "Which version of K3s to install. Defaults to the latest stable release."
 }
 
@@ -46,11 +46,11 @@ variable "PATH_TO_PRIVATE_KEY" {
 }
 
 variable "operating_system" {
-  type = string
+  type    = string
   default = "ubuntu"
 
   validation {
-    condition = contains(["ubuntu", "oraclelinux"], var.operating_system)
+    condition     = contains(["ubuntu", "oraclelinux"], var.operating_system)
     error_message = "Error: operating_system must be one of 'ubuntu' or 'oraclelinux'."
   }
 }
@@ -66,26 +66,26 @@ variable "compute_shape" {
 }
 
 variable "server_ocpus" {
-  type = number
-  default = 1
+  type        = number
+  default     = 1
   description = "Number of OCPUs to assign to server instances."
 }
 
 variable "server_memory_in_gbs" {
-  type = number
-  default = 6
+  type        = number
+  default     = 6
   description = "Amount of memory in GBs to assign to server instances."
 }
 
 variable "worker_ocpus" {
-  type = number
-  default = 1
+  type        = number
+  default     = 1
   description = "Number of OCPUs to assign to worker instances."
 }
 
 variable "worker_memory_in_gbs" {
-  type = number
-  default = 6
+  type        = number
+  default     = 6
   description = "Amount of memory in GBs to assign to worker instances."
 }
 
@@ -227,8 +227,8 @@ variable "longhorn_release" {
 }
 
 variable "install_oci_ccm" {
-  type        = bool
-  default     = false
+  type    = bool
+  default = false
 }
 
 variable "oci_ccm_release" {
