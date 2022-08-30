@@ -695,7 +695,6 @@ whit your public ip address CIDR.
 
 ```
 curl -o nginx-all-resources.yml https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/nginx/all-resources.yml
-kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/nginx/all-resources.yml
 
 vi nginx-all-resources.yml
 
