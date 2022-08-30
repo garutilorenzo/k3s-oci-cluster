@@ -25,6 +25,7 @@ variable "region" {
 module "k3s_cluster" {
   region                    = var.region
   availability_domain       = "<change_me>"
+  tenancy_ocid              = var.tenancy_ocid
   compartment_ocid          = var.compartment_ocid
   my_public_ip_cidr         = "<change_me>"
   cluster_name              = "<change_me>"

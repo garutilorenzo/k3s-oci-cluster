@@ -6,6 +6,10 @@ variable "availability_domain" {
   type = string
 }
 
+variable "tenancy_ocid" {
+
+}
+
 variable "compartment_ocid" {
   type = string
 }
