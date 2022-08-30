@@ -52,3 +52,13 @@ resource "oci_load_balancer_backend" "k3s_kube_api_backend" {
   load_balancer_id = oci_load_balancer_load_balancer.k3s_load_balancer.id
   port             = var.kube_api_port
 }
+
+resource "oci_load_balancer_backend" "k3s_kube_api_backend_primary" {
+  depends_on = [
+    oci_core_instance.k3s_primary_server
+  ]
+  backendset_name = oci_load_balancer_backend_set.k3s_kube_api_backend_set.name
+  ip_address = oci_core_instance.k3s_primary_server.private_ip
+  load_balancer_id = oci_load_balancer_load_balancer.k3s_load_balancer.id
+  port = var.kube_api_port
+}

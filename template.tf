@@ -1,7 +1,7 @@
 resource "oci_core_instance_configuration" "k3s_server_template" {
 
   compartment_id = var.compartment_ocid
-  display_name   = "Ubuntu 20.04 instance k3s server configuration"
+  display_name   = "K3s server configuration for ${var.operating_system}"
 
   freeform_tags = {
     "provisioner"           = "terraform"
@@ -39,22 +39,24 @@ resource "oci_core_instance_configuration" "k3s_server_template" {
       compartment_id      = var.compartment_ocid
 
       create_vnic_details {
-        assign_public_ip = true
-        subnet_id        = oci_core_subnet.default_oci_core_subnet10.id
-        nsg_ids          = [oci_core_network_security_group.lb_to_instances_kubeapi.id]
+        assign_public_ip          = true
+        assign_private_dns_record = true
+        subnet_id                 = oci_core_subnet.default_oci_core_subnet10.id
+        nsg_ids                   = [oci_core_network_security_group.lb_to_instances_kubeapi.id]
       }
 
-      display_name = "Ubuntu k3s server template"
+      display_name = "K3s server template: ${var.operating_system}"
 
       metadata = {
         "ssh_authorized_keys" = file(var.PATH_TO_PUBLIC_KEY)
         "user_data"           = data.template_cloudinit_config.k3s_server_tpl.rendered
+        "is_primary"          = "NO"
       }
 
       shape = var.compute_shape
       shape_config {
-        memory_in_gbs = "6"
-        ocpus         = "1"
+        memory_in_gbs = var.server_memory_in_gbs
+        ocpus         = var.server_ocpus
       }
       source_details {
         image_id    = var.os_image_id
@@ -67,7 +69,7 @@ resource "oci_core_instance_configuration" "k3s_server_template" {
 resource "oci_core_instance_configuration" "k3s_worker_template" {
 
   compartment_id = var.compartment_ocid
-  display_name   = "Ubuntu 20.04 instance k3s worker configuration"
+  display_name   = "K3s worker configuration for ${var.operating_system}"
 
   freeform_tags = {
     "provisioner"           = "terraform"
@@ -105,12 +107,13 @@ resource "oci_core_instance_configuration" "k3s_worker_template" {
       compartment_id      = var.compartment_ocid
 
       create_vnic_details {
-        assign_public_ip = true
-        subnet_id        = oci_core_subnet.default_oci_core_subnet10.id
-        nsg_ids          = [oci_core_network_security_group.lb_to_instances_http.id]
+        assign_public_ip          = true
+        assign_private_dns_record = true
+        subnet_id                 = oci_core_subnet.default_oci_core_subnet10.id
+        nsg_ids                   = [oci_core_network_security_group.lb_to_instances_http.id]
       }
 
-      display_name = "Ubuntu k3s worker template"
+      display_name = "K3s worker template: ${var.operating_system}"
 
       metadata = {
         "ssh_authorized_keys" = file(var.PATH_TO_PUBLIC_KEY)
@@ -119,8 +122,8 @@ resource "oci_core_instance_configuration" "k3s_worker_template" {
 
       shape = var.compute_shape
       shape_config {
-        memory_in_gbs = "6"
-        ocpus         = "1"
+        memory_in_gbs = var.worker_memory_in_gbs
+        ocpus         = var.worker_ocpus
       }
       source_details {
         image_id    = var.os_image_id

@@ -1,3 +1,8 @@
+resource "random_password" "k3s_token" {
+  length  = 55
+  special = false
+}
+
 data "template_cloudinit_config" "k3s_server_tpl" {
   gzip          = true
   base64_encode = true
@@ -5,13 +10,17 @@ data "template_cloudinit_config" "k3s_server_tpl" {
   part {
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/files/k3s-install-server.sh", {
-      k3s_token                               = var.k3s_token,
+      k3s_token                               = random_password.k3s_token.result
+      k3s_version                             = var.k3s_version,
       is_k3s_server                           = true,
       install_nginx_ingress                   = var.install_nginx_ingress,
       install_certmanager                     = var.install_certmanager,
+      operating_system                        = var.operating_system,
       certmanager_release                     = var.certmanager_release,
       certmanager_email_address               = var.certmanager_email_address,
+      vcn_ocid                                = oci_core_vcn.default_oci_core_vcn.id
       compartment_ocid                        = var.compartment_ocid,
+      subnet_ocid                             = oci_core_subnet.oci_core_subnet11.id
       availability_domain                     = var.availability_domain,
       k3s_url                                 = oci_load_balancer_load_balancer.k3s_load_balancer.ip_address_details[0].ip_address,
       k3s_tls_san                             = oci_load_balancer_load_balancer.k3s_load_balancer.ip_address_details[0].ip_address,
@@ -19,9 +28,12 @@ data "template_cloudinit_config" "k3s_server_tpl" {
       k3s_tls_san_public                      = local.public_lb_ip[0],
       install_longhorn                        = var.install_longhorn,
       longhorn_release                        = var.longhorn_release,
+      install_oci_ccm                         = var.install_oci_ccm,
+      oci_ccm_release                         = var.oci_ccm_release,
       nginx_ingress_controller_http_nodeport  = var.nginx_ingress_controller_http_nodeport,
       nginx_ingress_controller_https_nodeport = var.nginx_ingress_controller_https_nodeport,
     })
+
   }
 }
 
@@ -32,13 +44,16 @@ data "template_cloudinit_config" "k3s_worker_tpl" {
   part {
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/files/k3s-install-agent.sh", {
-      k3s_token                               = var.k3s_token,
+      k3s_token                               = random_password.k3s_token.result
+      operating_system                        = var.operating_system,
+      k3s_version                             = var.k3s_version,
       is_k3s_server                           = false,
       k3s_url                                 = oci_load_balancer_load_balancer.k3s_load_balancer.ip_address_details[0].ip_address,
       http_lb_port                            = var.http_lb_port,
       https_lb_port                           = var.https_lb_port,
       nginx_ingress_controller_http_nodeport  = var.nginx_ingress_controller_http_nodeport,
       nginx_ingress_controller_https_nodeport = var.nginx_ingress_controller_https_nodeport,
+      install_oci_ccm                         = var.install_oci_ccm,
     })
   }
 }

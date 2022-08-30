@@ -1,19 +1,245 @@
 #!/bin/bash
+#shellcheck disable=SC2154,SC2288,SC1083
+
+set -x
 
 wait_lb() {
-while [ true ]
+while true
 do
-  curl --output /dev/null --silent -k https://${k3s_url}:6443
-  if [[ "$?" -eq 0 ]]; then
+  if curl --output /dev/null --silent -k "https://${k3s_url}:6443"; then
     break
   fi
   sleep 5
-  echo "wait for LB"
+  echo "Waiting for load balancer..."
 done
 }
 
+render_ccm_config(){
+cat << 'EOF' > /root/ccm-config.yaml
+---
+auth:
+  useInstancePrincipals: true
+compartment: ${compartment_ocid}
+vcn: ${vcn_ocid}
+loadBalancer:
+  subnet1: ${subnet_ocid}
+  securityListManagementMode: All
+rateLimiter:
+  rateLimitQPSRead: 20.0
+  rateLimitBucketRead: 5
+  rateLimitBucketWrite: 5
+  rateLimitQPSWrite: 20.0
+EOF
+
+cat << 'EOF' > /root/oci-cloud-controller-manager.yaml
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: oci-cloud-controller-manager
+  namespace: kube-system
+  labels:
+    k8s-app: oci-cloud-controller-manager
+spec:
+  selector:
+    matchLabels:
+      component: oci-cloud-controller-manager
+      tier: control-plane
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        component: oci-cloud-controller-manager
+        tier: control-plane
+    spec:
+      serviceAccountName: cloud-controller-manager
+      hostNetwork: true
+      nodeSelector:
+        node-role.kubernetes.io/master: "true"
+      tolerations:
+      - key: node.cloudprovider.kubernetes.io/uninitialized
+        value: "true"
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      volumes:
+        - name: cfg
+          secret:
+            secretName: oci-cloud-controller-manager
+        - name: kubernetes
+          hostPath:
+            path: /etc/kubernetes
+      containers:
+        - name: oci-cloud-controller-manager
+          image: ghcr.io/oracle/cloud-provider-oci:v1.24.0
+          command: ["/usr/local/bin/oci-cloud-controller-manager"]
+          args:
+            - --cloud-config=/etc/oci/cloud-provider.yaml
+            - --cloud-provider=oci
+            - --secure-port=10358
+            - --v=2
+          volumeMounts:
+            - name: cfg
+              mountPath: /etc/oci
+              readOnly: true
+            - name: kubernetes
+              mountPath: /etc/kubernetes
+              readOnly: true
+EOF
+
+cat << 'EOF' > /root/oci-cloud-controller-manager-rbac.yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloud-controller-manager
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:cloud-controller-manager
+  labels:
+    kubernetes.io/cluster-service: "true"
+rules:
+- apiGroups:
+  - "coordination.k8s.io"
+  resources:
+  - leases
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - nodes/status
+  verbs:
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - list
+  - watch
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - services/status
+  verbs:
+  - patch
+  - get
+  - update
+- apiGroups:
+    - ""
+  resources:
+    - configmaps
+  resourceNames:
+    - "extension-apiserver-authentication"
+  verbs:
+    - get
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - list
+  - watch
+  - create
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  resourceNames:
+  - "cloud-controller-manager"
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  resourceNames:
+  - "cloud-controller-manager"
+  verbs:
+  - get
+  - update
+- apiGroups:
+    - ""
+  resources:
+    - configmaps
+  resourceNames:
+    - "extension-apiserver-authentication"
+  verbs:
+    - get
+    - list
+    - watch
+
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - list
+  - watch
+  - patch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: oci-cloud-controller-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:cloud-controller-manager
+subjects:
+- kind: ServiceAccount
+  name: cloud-controller-manager
+  namespace: kube-system
+EOF
+}
+
+
+
 render_nginx_config(){
-cat << 'EOF' > $NGINX_RESOURCES_FILE
+cat << 'EOF' > "$NGINX_RESOURCES_FILE"
 ---
 apiVersion: v1
 kind: Service
@@ -62,7 +288,7 @@ EOF
 
 render_staging_issuer(){
 STAGING_ISSUER_RESOURCE=$1
-cat << 'EOF' > $STAGING_ISSUER_RESOURCE
+cat << 'EOF' > "$STAGING_ISSUER_RESOURCE"
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -87,7 +313,7 @@ EOF
 
 render_prod_issuer(){
 PROD_ISSUER_RESOURCE=$1
-cat << 'EOF' > $PROD_ISSUER_RESOURCE
+cat << 'EOF' > "$PROD_ISSUER_RESOURCE"
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -110,7 +336,10 @@ spec:
 EOF
 }
 
-# Disable firewall 
+k3s_install_params=("--write-kubeconfig-mode 644")
+
+%{ if operating_system == "ubuntu" }
+# Disable firewall
 /usr/sbin/netfilter-persistent stop
 /usr/sbin/netfilter-persistent flush
 
@@ -123,34 +352,70 @@ apt-get install -y software-properties-common jq
 DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
 DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  python3 python3-pip
 pip install oci-cli
+%{ endif }
 
-local_ip=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/vnics/ | jq -r '.[0].privateIp')
-flannel_iface=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)')
+%{ if operating_system == "oraclelinux" }
+# Disable firewall
+systemctl disable --now firewalld
+# END Disable firewall
+
+# Fix iptables/SELinux bug
+echo '(allow iptables_t cgroup_t (dir (ioctl)))' > /root/local_iptables.cil
+semodule -i /root/local_iptables.cil
+
+#dnf -y update
+dnf -y install jq python36-oci-cli
+
+k3s_install_params+=("--selinux")
+%{ endif }
+
 
 export OCI_CLI_AUTH=instance_principal
-first_instance=$(oci compute instance list --compartment-id ${compartment_ocid} --availability-domain ${availability_domain} --lifecycle-state RUNNING --sort-by TIMECREATED  | jq -r '.data[]|select(."display-name" | endswith("k3s-servers")) | .["display-name"]' | tail -n 1)
-instance_id=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance | jq -r '.displayName')
-first_last="last"
+is_primary=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/metadata/is_primary)
 
-%{ if install_nginx_ingress } 
-disable_traefik="--disable traefik"
+
+%{ if install_nginx_ingress }
+k3s_install_params+=("--disable traefik")
+%{ endif }
+
+%{ if install_oci_ccm == true }
+instance_ocid=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/id)
+k3s_install_params+=("--disable-cloud-controller")
+k3s_install_params+=("--disable servicelb")
+k3s_install_params+=("--kubelet-arg cloud-provider=external")
+k3s_install_params+=("--kubelet-arg provider-id=oci://$instance_ocid")
 %{ endif }
 
 %{ if expose_kubeapi }
-tls_extra_san="--tls-san ${k3s_tls_san_public}"
+k3s_install_params+=("--tls-san ${k3s_tls_san_public}")
 %{ endif }
 
-if [[ "$first_instance" == "$instance_id" ]]; then
+%{ if k3s_version == "latest" }
+K3S_VERSION=$(curl --silent https://api.github.com/repos/k3s-io/k3s/releases/latest | jq -r '.name')
+%{ else }
+K3S_VERSION="${k3s_version}"
+%{ endif }
+
+INSTALL_PARAMS="$${k3s_install_params[*]}"
+
+if [[ "$is_primary" == "YES" ]]; then
   echo "I'm the first yeeee: Cluster init!"
-  first_last="first"
-  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --cluster-init $disable_traefik --node-ip $local_ip --advertise-address $local_ip --flannel-iface $flannel_iface --tls-san ${k3s_tls_san} $tls_extra_san); do
+  # shellcheck disable=SC2086
+  until (curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=$K3S_VERSION K3S_TOKEN=${k3s_token} sh -s - --cluster-init $INSTALL_PARAMS); do
     echo 'k3s did not install correctly'
     sleep 2
   done
+%{ if install_oci_ccm }
+  render_ccm_config
+  kubectl create secret generic oci-cloud-controller-manager -n kube-system --from-file=cloud-provider.yaml=/root/ccm-config.yaml
+  kubectl apply -f "/root/oci-cloud-controller-manager-rbac.yaml"
+  kubectl apply -f "/root/oci-cloud-controller-manager.yaml"
+%{ endif }
 else
   echo ":( Cluster join"
   wait_lb
-  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --server https://${k3s_url}:6443 $disable_traefik --node-ip $local_ip --advertise-address $local_ip --flannel-iface $flannel_iface --tls-san ${k3s_tls_san} $tls_extra_san); do
+  # shellcheck disable=SC2086
+  until (curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="$K3S_VERSION" K3S_TOKEN=${k3s_token} sh -s - --server https://${k3s_url}:6443 $INSTALL_PARAMS); do
     echo 'k3s did not install correctly'
     sleep 2
   done
@@ -163,17 +428,19 @@ until kubectl get pods -A | grep 'Running'; do
 done
 
 %{ if install_longhorn }
-if [[ "$first_last" == "first" ]]; then
+if [[ "$is_primary" == "YES" ]]; then
+  %{ if operating_system == "ubuntu" }
   DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  open-iscsi curl util-linux
-  systemctl enable iscsid.service
-  systemctl start iscsid.service
-  kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/${longhorn_release}/deploy/longhorn.yaml
-  kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/${longhorn_release}/examples/storageclass.yaml
+  %{ endif }
+  systemctl enable --now iscsid.service
+
+  kubectl apply -f "https://raw.githubusercontent.com/longhorn/longhorn/${longhorn_release}/deploy/longhorn.yaml"
+  kubectl create -f "https://raw.githubusercontent.com/longhorn/longhorn/${longhorn_release}/examples/storageclass.yaml"
 fi
 %{ endif }
 
 %{ if install_nginx_ingress }
-if [[ "$first_last" == "first" ]]; then
+if [[ "$is_primary" == "YES" ]]; then
   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/baremetal/deploy.yaml
   NGINX_RESOURCES_FILE=/root/nginx-ingress-resources.yaml
   render_nginx_config
@@ -182,8 +449,8 @@ fi
 %{ endif }
 
 %{ if install_certmanager }
-if [[ "$first_last" == "first" ]]; then
-  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${certmanager_release}/cert-manager.yaml
+if [[ "$is_primary" == "YES" ]]; then
+  kubectl apply -f "https://github.com/cert-manager/cert-manager/releases/download/${certmanager_release}/cert-manager.yaml"
   render_staging_issuer /root/staging_issuer.yaml
   render_prod_issuer /root/prod_issuer.yaml
 

@@ -7,7 +7,7 @@ variable "availability_domain" {
 }
 
 variable "tenancy_ocid" {
-
+  type = string
 }
 
 variable "compartment_ocid" {
@@ -18,8 +18,10 @@ variable "environment" {
   type = string
 }
 
-variable "k3s_token" {
+variable "k3s_version" {
   type = string
+  default = "latest"
+  description = "Which version of K3s to install. Defaults to the latest stable release."
 }
 
 variable "cluster_name" {
@@ -34,7 +36,23 @@ variable "fault_domains" {
 variable "PATH_TO_PUBLIC_KEY" {
   type        = string
   default     = "~/.ssh/id_rsa.pub"
-  description = "Path to your public key"
+  description = "Path to your public SSH key"
+}
+
+variable "PATH_TO_PRIVATE_KEY" {
+  type        = string
+  default     = "~/.ssh/id_rsa"
+  description = "Path to your private SSH key"
+}
+
+variable "operating_system" {
+  type = string
+  default = "ubuntu"
+
+  validation {
+    condition = contains(["ubuntu", "oraclelinux"], var.operating_system)
+    error_message = "Error: operating_system must be one of 'ubuntu' or 'oraclelinux'."
+  }
 }
 
 variable "os_image_id" {
@@ -45,6 +63,30 @@ variable "os_image_id" {
 variable "compute_shape" {
   type    = string
   default = "VM.Standard.A1.Flex"
+}
+
+variable "server_ocpus" {
+  type = number
+  default = 1
+  description = "Number of OCPUs to assign to server instances."
+}
+
+variable "server_memory_in_gbs" {
+  type = number
+  default = 6
+  description = "Amount of memory in GBs to assign to server instances."
+}
+
+variable "worker_ocpus" {
+  type = number
+  default = 1
+  description = "Number of OCPUs to assign to worker instances."
+}
+
+variable "worker_memory_in_gbs" {
+  type = number
+  default = 6
+  description = "Amount of memory in GBs to assign to worker instances."
 }
 
 variable "public_lb_shape" {
@@ -182,6 +224,16 @@ variable "install_longhorn" {
 variable "longhorn_release" {
   type    = string
   default = "v1.2.3"
+}
+
+variable "install_oci_ccm" {
+  type        = bool
+  default     = false
+}
+
+variable "oci_ccm_release" {
+  type    = string
+  default = "v1.24.0"
 }
 
 variable "expose_kubeapi" {

@@ -15,3 +15,10 @@ output "k3s_workers_ips" {
 output "public_lb_ip" {
   value = oci_network_load_balancer_network_load_balancer.k3s_public_lb.ip_addresses
 }
+
+output "k3s_primary_server_ip" {
+  depends_on = [
+    oci_core_instance.k3s_primary_server
+  ]
+  value = oci_core_instance.k3s_primary_server.public_ip
+}

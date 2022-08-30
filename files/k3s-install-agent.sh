@@ -1,24 +1,26 @@
 #!/bin/bash
+#shellcheck disable=SC2154,SC2288,SC1083
 
 wait_lb() {
-while [ true ]
+while true
 do
-  curl --output /dev/null --silent -k https://${k3s_url}:6443
-  if [[ "$?" -eq 0 ]]; then
+  if curl --output /dev/null --silent -k "https://${k3s_url}:6443"; then
     break
   fi
   sleep 5
-  echo "wait for LB"
+  echo "Waiting for load balancer..."
 done
 }
 
-# Disable firewall 
+k3s_install_params=()
+
+%{ if operating_system == "ubuntu" }
+# Disable firewall
 /usr/sbin/netfilter-persistent stop
 /usr/sbin/netfilter-persistent flush
 
 systemctl stop netfilter-persistent.service
 systemctl disable netfilter-persistent.service
-
 # END Disable firewall
 
 apt-get update
@@ -27,13 +29,47 @@ DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
 DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y python3 python3-pip nginx
 systemctl enable nginx
 pip install oci-cli
+%{ endif }
+
+%{ if operating_system == "oraclelinux" }
+# Disable firewall
+systemctl disable --now firewalld
+# END Disable firewall
+
+# Fix iptables/SELinux bug
+echo '(allow iptables_t cgroup_t (dir (ioctl)))' > /root/local_iptables.cil
+semodule -i /root/local_iptables.cil
+
+dnf -y update
+dnf -y module enable nginx:1.20 python36:3.6
+dnf -y install jq python36-oci-cli python3-jinja2 nginx-all-modules
+
+k3s_install_params+=("--selinux")
+%{ endif }
 
 local_ip=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/vnics/ | jq -r '.[0].privateIp')
-flannel_iface=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)')
+flannel_iface=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)
+k3s_install_params+=("--node-ip $local_ip")
+k3s_install_params+=("--flannel-iface $flannel_iface")
+
+%{ if install_oci_ccm == true }
+instance_ocid=$(curl -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance/id)
+k3s_install_params+=("--kubelet-arg cloud-provider=external")
+k3s_install_params+=("--kubelet-arg provider-id=oci://$instance_ocid")
+%{ endif }
 
 wait_lb
 
-until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} K3S_URL=https://${k3s_url}:6443 sh -s - --node-ip $local_ip --flannel-iface $flannel_iface); do
+%{ if k3s_version == "latest" }
+K3S_VERSION=$(curl --silent https://api.github.com/repos/k3s-io/k3s/releases/latest | jq -r '.name')
+%{ else }
+K3S_VERSION="${k3s_version}"
+%{ endif }
+
+INSTALL_PARAMS="$${k3s_install_params[*]}"
+
+# shellcheck disable=SC2086
+until (curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=$K3S_VERSION K3S_TOKEN=${k3s_token} K3S_URL=https://${k3s_url}:6443 sh -s - $INSTALL_PARAMS); do
   echo 'k3s did not install correctly'
   sleep 2
 done
@@ -43,11 +79,11 @@ export OCI_CLI_AUTH=instance_principal
 private_ips=()
 
 # Fetch the OCID of all the running instances in OCI and store to an array
-instance_ocids=$(oci search resource structured-search --query-text "QUERY instance resources where lifeCycleState='RUNNING'"  --query 'data.items[*].identifier' --raw-output | jq -r '.[]' ) 
+instance_ocids=$(oci search resource structured-search --query-text "QUERY instance resources where lifeCycleState='RUNNING'"  --query 'data.items[*].identifier' --raw-output | jq -r '.[]' )
 
 # Iterate through the array to fetch details of each instance one by one
 for val in $${instance_ocids[@]} ; do
-  
+
   echo $val
 
   # Get name of the instance
@@ -71,9 +107,13 @@ done
 EOF
 
 cat << 'EOF' > /root/nginx.tpl
+%{ if operating_system == "ubuntu" }
 load_module /usr/lib/nginx/modules/ngx_stream_module.so;
-
 user www-data;
+%{ else }
+load_module /usr/lib64/nginx/modules/ngx_stream_module.so;
+user nginx;
+%{ endif }
 worker_processes auto;
 pid /run/nginx.pid;
 
@@ -139,8 +179,7 @@ with open(nginx_config_path, 'w') as handle:
     handle.write(new_nginx_config)
 EOF
 
-chmod +x /root/find_ips.sh
-./root/find_ips.sh
+sh /root/find_ips.sh
 
 python3 /root/render_nginx_config.py
 

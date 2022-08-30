@@ -110,7 +110,6 @@ module "k3s_cluster" {
   my_public_ip_cidr   = "<change_me>"
   cluster_name        = "<change_me>"
   environment         = "staging"
-  k3s_token           = "<change_me>"
   source              = "github.com/garutilorenzo/k3s-oci-cluster"
 }
 
@@ -200,7 +199,6 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `availability_domain` | `yes`        | Set the correct availability domain. See [how](#how-to-find-the-availability-doamin-name) to find the availability domain|
 | `compartment_ocid` | `yes`        | Set the correct compartment ocid. See [how](#oracle-provider-setup) to find the compartment ocid |
 | `cluster_name` | `yes`        | the name of your K3s cluster. Default: k3s-cluster |
-| `k3s_token` | `yes`        | The token of your K3s cluster. [How to](#generate-random-token) generate a random token |
 | `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
 | `compute_shape`  | `no`  | Compute shape to use. Default VM.Standard.A1.Flex. **NOTE** Is mandatory to use this compute shape for provision 4 always free VMs |
@@ -544,14 +542,14 @@ curl -v http://<PUBLIC_LB_IP>
 > Host: PUBLIC_LB_IP
 > User-Agent: curl/7.68.0
 > Accept: */*
-> 
+>
 * Mark bundle as not supporting multiuse
 < HTTP/1.1 404 Not Found
 < Date: Fri, 25 Feb 2022 14:03:09 GMT
 < Content-Type: text/html
 < Content-Length: 146
 < Connection: keep-alive
-< 
+<
 <html>
 <head><title>404 Not Found</title></head>
 <body>
@@ -596,14 +594,14 @@ curl -k -v https://<PUBLIC_LB_IP>
 > Host: PUBLIC_LB_IP
 > User-Agent: curl/7.68.0
 > Accept: */*
-> 
+>
 * Mark bundle as not supporting multiuse
 < HTTP/1.1 404 Not Found
 < Date: Fri, 25 Feb 2022 13:48:19 GMT
 < Content-Type: text/html
 < Content-Length: 146
 < Connection: keep-alive
-< 
+<
 <html>
 <head><title>404 Not Found</title></head>
 <body>
@@ -625,7 +623,7 @@ default           Active   9m40s
 kube-node-lease   Active   9m39s
 kube-public       Active   9m39s
 kube-system       Active   9m40s
-longhorn-system   Active   8m52s   <- longhorn namespace 
+longhorn-system   Active   8m52s   <- longhorn namespace
 
 
 root@inst-hmgnl-k3s-servers:~# kubectl get pods -n longhorn-system
