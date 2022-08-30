@@ -681,11 +681,30 @@ Deploy the resources with:
 
 ```
 kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/mariadb/all-resources.yml
-kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/nginx/all-resources.yml
 kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/wordpress/all-resources.yml
 ```
 
-and check the status:
+**NOTE** The Wordpress installation is **secured**. To allow external traffic to /wp-admin, /xmlrpc.php and wp-login.php you have to edit the  [deployments/nginx/all-resources.yml](https://github.com/garutilorenzo/k3s-oci-cluster/blob/master/deployments/nginx/all-resources.yml) and change this line:
+
+```yaml
+- name: SECURE_SUBNET
+  value: 8.8.8.8/32 # change-me
+```
+
+whit your public ip address CIDR.
+
+```
+curl -o nginx-all-resources.yml https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/nginx/all-resources.yml
+kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/nginx/all-resources.yml
+
+vi nginx-all-resources.yml
+
+change SECURE_SUBNET and save the file
+
+kubectl apply -f nginx-all-resources.yml
+```
+
+now check the status:
 
 ```
 kubectl get deployments
