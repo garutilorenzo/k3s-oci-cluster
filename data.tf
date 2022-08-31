@@ -77,6 +77,6 @@ data "oci_core_instance_pool_instances" "k3s_servers_instances" {
 }
 
 data "oci_core_instance" "k3s_servers_instances_ips" {
-  count       = var.k3s_server_pool_size
+  count       = var.k3s_server_pool_size - 1
   instance_id = data.oci_core_instance_pool_instances.k3s_servers_instances.instances[count.index].id
 }
