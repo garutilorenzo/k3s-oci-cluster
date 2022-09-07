@@ -668,7 +668,7 @@ longhorn-ui-9fdb94f9-6shsr                  1/1     Running   0               8m
 
 #### Argocd check
 
-You can
+You can verify that all pods are running:
 ```
 root@inst-hmgnl-k3s-servers:~# kubectl get pods -n argocd
 NAME                                                READY   STATUS    RESTARTS   AGE
@@ -681,7 +681,8 @@ argocd-repo-server-5576f8d84b-sgbbt                 1/1     Running   0         
 argocd-server-76cf7d4c7b-jq9qx                      1/1     Running   0          8m52s
 ```
 
-To fetch the initial admin password: 
+To fetch the initial admin password, to be able to do this you need to expose your kubeapi-server and fetch the
+kubeconfig from one of the server nodes, it will be in (/var/lib/rancher/k3s/server/cred/admin.kubeconfig): 
 ```
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
