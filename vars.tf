@@ -184,6 +184,26 @@ variable "longhorn_release" {
   default = "v1.2.3"
 }
 
+variable "install_argocd" {
+  type    = bool
+  default = true
+}
+
+variable "argocd_release" {
+  type    = string
+  default = "v2.4.11"
+}
+
+variable "install_argocd_image_updater" {
+  type    = bool
+  default = true
+}
+
+variable "argocd_image_updater_release" {
+  type    = string
+  default = "v0.12.0"
+}
+
 variable "expose_kubeapi" {
   type    = bool
   default = false
