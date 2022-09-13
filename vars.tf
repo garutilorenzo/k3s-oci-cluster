@@ -27,7 +27,7 @@ variable "cluster_name" {
 }
 
 variable "os_image_id" {
-  type    = string
+  type = string
 }
 
 variable "fault_domains" {
