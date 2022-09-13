@@ -44,6 +44,25 @@ To use this repo you will need:
 
 Once you get the account, follow the *Before you begin* and *1. Prepare* step in [this](https://docs.oracle.com/en-us/iaas/developer-tutorials/tutorials/tf-provider/01-summary.htm) document.
 
+### Terraform OCI user creation (Optional)
+
+Is always recommended to create a separate user an group to use with Terraform. This user must have less privileges possible (Zero trust policy). This is an example policy that allow *terraform-group* to manage all the resources needed by this module:
+
+```
+Allow group terraform-group to manage virtual-network-family  in compartment id <compartment_ocid>
+Allow group terraform-group to manage instance-family  in compartment id <compartment_ocid>
+Allow group terraform-group to manage compute-management-family  in compartment id <compartment_ocid>
+Allow group terraform-group to manage volume-family  in compartment id <compartment_ocid>
+Allow group terraform-group to manage load-balancers  in compartment id <compartment_ocid>
+Allow group terraform-group to manage network-load-balancers  in compartment id <compartment_ocid>
+Allow group terraform-group to manage dynamic-groups in compartment id <compartment_ocid>
+Allow group terraform-group to manage policies in compartment id <compartment_ocid>
+Allow group terraform-group to read network-load-balancers  in compartment id <compartment_ocid>
+```
+
+The user and the group have to be manually created before using this module.
+To create the user go to Identity & Security -> Users, then create the group in Identity & Security -> Groups and associate the newly created user to the group. The last step is to create the policy in Identity & Security -> Policies.
+
 #### Example RSA key generation
 
 To use terraform with the Oracle Cloud infrastructure you need to generate an RSA key. Generate the rsa key with:
@@ -203,8 +222,8 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `k3s_token` | `yes`        | The token of your K3s cluster. [How to](#generate-random-token) generate a random token |
 | `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
+| `os_image_id`  | `yes`  | Image id to use. See [how](#how-to-list-all-the-os-images) to list all available OS images |
 | `compute_shape`  | `no`  | Compute shape to use. Default VM.Standard.A1.Flex. **NOTE** Is mandatory to use this compute shape for provision 4 always free VMs |
-| `os_image_id`  | `no`  | Image id to use. Default image: Canonical-Ubuntu-20.04-aarch64-2022.01.18-0. See [how](#how-to-list-all-the-os-images) to list all available OS images |
 | `oci_core_vcn_dns_label`  | `no`  | VCN DNS label. Default: defaultvcn |
 | `oci_core_subnet_dns_label10`  | `no`  | First subnet DNS label. Default: defaultsubnet10 |
 | `oci_core_subnet_dns_label11`  | `no`  | Second subnet DNS label. Default: defaultsubnet11 |

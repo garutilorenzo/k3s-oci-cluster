@@ -8,6 +8,7 @@ data "template_cloudinit_config" "k3s_server_tpl" {
       k3s_token                               = var.k3s_token,
       is_k3s_server                           = true,
       install_nginx_ingress                   = var.install_nginx_ingress,
+      nginx_ingress_release                   = var.nginx_ingress_release,
       install_certmanager                     = var.install_certmanager,
       certmanager_release                     = var.certmanager_release,
       certmanager_email_address               = var.certmanager_email_address,
