@@ -18,10 +18,6 @@ variable "environment" {
   type = string
 }
 
-variable "k3s_token" {
-  type = string
-}
-
 variable "cluster_name" {
   type = string
 }

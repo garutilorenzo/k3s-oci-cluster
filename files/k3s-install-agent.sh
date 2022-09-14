@@ -12,32 +12,71 @@ do
 done
 }
 
-# Disable firewall 
-/usr/sbin/netfilter-persistent stop
-/usr/sbin/netfilter-persistent flush
+if test -f /etc/lsb-release; then
+  operating_system="ubuntu"
+else
+  operating_system="oraclelinux"
+fi
 
-systemctl stop netfilter-persistent.service
-systemctl disable netfilter-persistent.service
+if [[ "$operating_system" == "ubuntu" ]]; then
+  # Disable firewall 
+  /usr/sbin/netfilter-persistent stop
+  /usr/sbin/netfilter-persistent flush
 
-# END Disable firewall
+  systemctl stop netfilter-persistent.service
+  systemctl disable netfilter-persistent.service
 
-apt-get update
-apt-get install -y software-properties-common jq
-DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
-DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y python3 python3-pip nginx
-systemctl enable nginx
-pip install oci-cli
+  # END Disable firewall
+
+  apt-get update
+  apt-get install -y software-properties-common jq
+  DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+  %{ if install_nginx_ingress }
+  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y python3 python3-pip nginx
+  systemctl enable nginx
+  pip install oci-cli
+  %{ endif }
+fi
+
+if [[ "$operating_system" == "oraclelinux" ]]; then
+  # Disable firewall
+  systemctl disable --now firewalld
+  # END Disable firewall
+
+  # Fix iptables/SELinux bug
+  echo '(allow iptables_t cgroup_t (dir (ioctl)))' > /root/local_iptables.cil
+  semodule -i /root/local_iptables.cil
+
+  dnf -y update
+  dnf -y install jq curl
+  %{ if install_nginx_ingress }
+  dnf -y install jq python39-oci-cli python3-jinja2 nginx-all-modules
+  %{ endif }
+
+  # Nginx Selinux Fix
+  setsebool httpd_can_network_connect on -P
+fi
 
 local_ip=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/vnics/ | jq -r '.[0].privateIp')
 flannel_iface=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)')
 
+k3s_install_params=("--node-ip $local_ip")
+k3s_install_params+=("--flannel-iface $flannel_iface")
+
+if [[ "$operating_system" == "oraclelinux" ]]; then
+  k3s_install_params+=(="--selinux")
+fi
+
+INSTALL_PARAMS="$${k3s_install_params[*]}"
+
 wait_lb
 
-until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} K3S_URL=https://${k3s_url}:6443 sh -s - --node-ip $local_ip --flannel-iface $flannel_iface); do
+until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} K3S_URL=https://${k3s_url}:6443 sh -s - $INSTALL_PARAMS); do
   echo 'k3s did not install correctly'
   sleep 2
 done
 
+%{ if install_nginx_ingress }
 cat << 'EOF' > /root/find_ips.sh
 export OCI_CLI_AUTH=instance_principal
 private_ips=()
@@ -70,13 +109,26 @@ do
 done
 EOF
 
-cat << 'EOF' > /root/nginx.tpl
-load_module /usr/lib/nginx/modules/ngx_stream_module.so;
+if [[ "$operating_system" == "ubuntu" ]]; then
+  NGINX_MODULE=/usr/lib/nginx/modules/ngx_stream_module.so
+  NGINX_USER=www-data
+fi
 
-user www-data;
+if [[ "$operating_system" == "oraclelinux" ]]; then
+  NGINX_MODULE=/usr/lib64/nginx/modules/ngx_stream_module.so
+  NGINX_USER=nginx
+fi
+
+cat << EOD > /root/nginx-header.tpl
+load_module $NGINX_MODULE;
+
+user $NGINX_USER;
 worker_processes auto;
 pid /run/nginx.pid;
 
+EOD
+
+cat << 'EOF' > /root/nginx-footer.tpl
 events {
   worker_connections 768;
   # multi_accept on;
@@ -118,6 +170,8 @@ stream {
 }
 EOF
 
+cat /root/nginx-header.tpl /root/nginx-footer.tpl > /root/nginx.tpl
+
 cat << 'EOF' > /root/render_nginx_config.py
 from jinja2 import Template
 import os
@@ -147,3 +201,12 @@ python3 /root/render_nginx_config.py
 nginx -t
 
 systemctl restart nginx
+%{ endif }
+
+%{ if install_longhorn }
+if [[ "$operating_system" == "ubuntu" ]]; then
+  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  open-iscsi curl util-linux
+fi
+
+systemctl enable --now iscsid.service
+%{ endif }

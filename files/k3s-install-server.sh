@@ -110,19 +110,42 @@ spec:
 EOF
 }
 
-# Disable firewall 
-/usr/sbin/netfilter-persistent stop
-/usr/sbin/netfilter-persistent flush
+if test -f /etc/lsb-release; then
+  operating_system="ubuntu"
+else
+  operating_system="oraclelinux"
+fi
 
-systemctl stop netfilter-persistent.service
-systemctl disable netfilter-persistent.service
-# END Disable firewall
+if [[ "$operating_system" == "ubuntu" ]]; then
+  echo "Canonical Ubuntu"
+  # Disable firewall 
+  /usr/sbin/netfilter-persistent stop
+  /usr/sbin/netfilter-persistent flush
 
-apt-get update
-apt-get install -y software-properties-common jq
-DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
-DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  python3 python3-pip
-pip install oci-cli
+  systemctl stop netfilter-persistent.service
+  systemctl disable netfilter-persistent.service
+  # END Disable firewall
+
+  apt-get update
+  apt-get install -y software-properties-common jq
+  DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  python3 python3-pip
+  pip install oci-cli
+fi
+
+if [[ "$operating_system" == "oraclelinux" ]]; then
+  echo "Oracle Linux"
+  # Disable firewall
+  systemctl disable --now firewalld
+  # END Disable firewall
+
+  # Fix iptables/SELinux bug
+  echo '(allow iptables_t cgroup_t (dir (ioctl)))' > /root/local_iptables.cil
+  semodule -i /root/local_iptables.cil
+
+  dnf -y update
+  dnf -y install jq python39-oci-cli curl
+fi
 
 local_ip=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/vnics/ | jq -r '.[0].privateIp')
 flannel_iface=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)')
@@ -132,25 +155,36 @@ first_instance=$(oci compute instance list --compartment-id ${compartment_ocid} 
 instance_id=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance | jq -r '.displayName')
 first_last="last"
 
+k3s_install_params=("--node-ip $local_ip")
+k3s_install_params+=("--advertise-address $local_ip")
+k3s_install_params+=("--flannel-iface $flannel_iface")
+k3s_install_params+=("--tls-san ${k3s_tls_san}")
+
 %{ if install_nginx_ingress } 
-disable_traefik="--disable traefik"
+k3s_install_params+=("--disable traefik")
 %{ endif }
 
 %{ if expose_kubeapi }
-tls_extra_san="--tls-san ${k3s_tls_san_public}"
+k3s_install_params+=("--tls-san ${k3s_tls_san_public}")
 %{ endif }
+
+if [[ "$operating_system" == "oraclelinux" ]]; then
+  k3s_install_params+=(="--selinux")
+fi
+
+INSTALL_PARAMS="$${k3s_install_params[*]}"
 
 if [[ "$first_instance" == "$instance_id" ]]; then
   echo "I'm the first yeeee: Cluster init!"
   first_last="first"
-  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --cluster-init $disable_traefik --node-ip $local_ip --advertise-address $local_ip --flannel-iface $flannel_iface --tls-san ${k3s_tls_san} $tls_extra_san); do
+  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --cluster-init $INSTALL_PARAMS); do
     echo 'k3s did not install correctly'
     sleep 2
   done
 else
   echo ":( Cluster join"
   wait_lb
-  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --server https://${k3s_url}:6443 $disable_traefik --node-ip $local_ip --advertise-address $local_ip --flannel-iface $flannel_iface --tls-san ${k3s_tls_san} $tls_extra_san); do
+  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --server https://${k3s_url}:6443 $INSTALL_PARAMS); do
     echo 'k3s did not install correctly'
     sleep 2
   done
@@ -164,9 +198,11 @@ done
 
 %{ if install_longhorn }
 if [[ "$first_last" == "first" ]]; then
-  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  open-iscsi curl util-linux
-  systemctl enable iscsid.service
-  systemctl start iscsid.service
+  if [[ "$operating_system" == "ubuntu" ]]; then
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  open-iscsi curl util-linux
+  fi
+
+  systemctl enable --now iscsid.service
   kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/${longhorn_release}/deploy/longhorn.yaml
   kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/${longhorn_release}/examples/storageclass.yaml
 fi

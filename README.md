@@ -129,7 +129,6 @@ module "k3s_cluster" {
   my_public_ip_cidr   = "<change_me>"
   cluster_name        = "<change_me>"
   environment         = "staging"
-  k3s_token           = "<change_me>"
   source              = "github.com/garutilorenzo/k3s-oci-cluster"
 }
 
@@ -219,7 +218,6 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `availability_domain` | `yes`        | Set the correct availability domain. See [how](#how-to-find-the-availability-doamin-name) to find the availability domain|
 | `compartment_ocid` | `yes`        | Set the correct compartment ocid. See [how](#oracle-provider-setup) to find the compartment ocid |
 | `cluster_name` | `yes`        | the name of your K3s cluster. Default: k3s-cluster |
-| `k3s_token` | `yes`        | The token of your K3s cluster. [How to](#generate-random-token) generate a random token |
 | `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
 | `os_image_id`  | `yes`  | Image id to use. See [how](#how-to-list-all-the-os-images) to list all available OS images |
@@ -254,13 +252,6 @@ nginx_ingress_controller_http_nodeport
 | `expose_kubeapi`  | `no`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
 | `PATH_TO_PUBLIC_KEY`     | `no`       | Path to your public ssh key (Default: "~/.ssh/id_rsa.pub) |
 
-#### Generate random token
-
-Generate random k3s token with:
-
-```
-cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 55 | head -n 1
-```
 
 #### How to find the availability doamin name
 
