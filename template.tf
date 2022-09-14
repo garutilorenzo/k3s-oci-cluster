@@ -60,7 +60,14 @@ resource "oci_core_instance_configuration" "k3s_server_template" {
         image_id    = var.os_image_id
         source_type = "image"
       }
+
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      instance_details[0].launch_details[0].metadata
+    ]
   }
 }
 

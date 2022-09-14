@@ -202,17 +202,13 @@ fi
 if [[ "$first_last" == "first" ]]; then
   kubectl create namespace argocd
   kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/${argocd_release}/manifests/install.yaml
-
-  kubectl apply -n argocd -f
-  https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/${argocd_image_updater_release}/manifests/install.yaml
 fi
-%{ endif }
 
 %{ if install_argocd_image_updater }
 if [[ "$first_last" == "first" ]]; then
-  kubectl apply -n argocd -f
-  https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/${argocd_image_updater_release}/manifests/install.yaml
+  kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/${argocd_image_updater_release}/manifests/install.yaml
 fi
+%{ endif }
 %{ endif }
 
 %{ endif }
