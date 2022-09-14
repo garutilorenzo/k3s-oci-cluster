@@ -30,7 +30,7 @@ module "k3s_cluster" {
   my_public_ip_cidr         = "<change_me>"
   cluster_name              = "<change_me>"
   environment               = "staging"
-  k3s_token                 = "<change_me>"
+  os_image_id               = "<change_me>"
   certmanager_email_address = "<change_me>"
   source                    = "../"
 }
