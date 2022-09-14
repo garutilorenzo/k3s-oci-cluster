@@ -50,7 +50,12 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
   dnf -y update
   dnf -y install jq curl
   %{ if install_nginx_ingress }
-  dnf -y install jq python39-oci-cli python3-jinja2 nginx-all-modules
+  if grep -q "el9" /etc/os-release; then
+    dnf -y install python39-oci-cli python3-jinja2 nginx-all-modules
+  else
+    dnf -y module enable nginx:1.20 python36:3.6
+    dnf -y install python36-oci-cli python3-jinja2 nginx-all-modules
+  fi
   %{ endif }
 
   # Nginx Selinux Fix

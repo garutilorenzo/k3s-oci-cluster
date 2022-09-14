@@ -13,7 +13,7 @@ done
 }
 
 render_nginx_config(){
-cat << 'EOF' > $NGINX_RESOURCES_FILE
+cat << 'EOF' > "$NGINX_RESOURCES_FILE"
 ---
 apiVersion: v1
 kind: Service
@@ -62,7 +62,7 @@ EOF
 
 render_staging_issuer(){
 STAGING_ISSUER_RESOURCE=$1
-cat << 'EOF' > $STAGING_ISSUER_RESOURCE
+cat << 'EOF' > "$STAGING_ISSUER_RESOURCE"
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -87,7 +87,7 @@ EOF
 
 render_prod_issuer(){
 PROD_ISSUER_RESOURCE=$1
-cat << 'EOF' > $PROD_ISSUER_RESOURCE
+cat << 'EOF' > "$PROD_ISSUER_RESOURCE"
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -144,7 +144,12 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
   semodule -i /root/local_iptables.cil
 
   dnf -y update
-  dnf -y install jq python39-oci-cli curl
+  if grep -q "el9" /etc/os-release; then
+    dnf -y install jq python39-oci-cli curl
+  else
+    dnf -y module enable python36:3.6
+    dnf -y install jq python36-oci-cli curl
+  fi
 fi
 
 local_ip=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/vnics/ | jq -r '.[0].privateIp')
