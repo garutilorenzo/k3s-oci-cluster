@@ -230,6 +230,10 @@ nginx_ingress_controller_http_nodeport
 | `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
 | `certmanager_release`  | `no`  | Cert manager release. Default: v1.8.2  |
 | `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Defaul: changeme@example.com  |
+| `install_argocd`  | `no`  | Boolean value, install [Argo CD](https://argo-cd.readthedocs.io/en/stable/) "a declarative, GitOps continuous delivery tool for Kubernetes.". Default: true  |
+| `argocd_release`  | `no`  | Argo CD release. Default: v2.4.11  |
+| `install_argocd_image_updater`  | `no`  | Boolean value, install [Argo CD Image Updater](https://argocd-image-updater.readthedocs.io/en/stable/) "A tool to automatically update the container images of Kubernetes workloads that are managed by Argo CD.". Default: true  |
+| `argocd_image_updater_release`  | `no`  | Argo CD release Image Updater. Default: v0.12.0  |
 | `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
 | `unique_tag_value`  | `no`  | Unique value used with  unique_tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster |
 | `expose_kubeapi`  | `no`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
