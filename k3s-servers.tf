@@ -11,7 +11,7 @@ resource "oci_core_instance_pool" "k3s_servers" {
 
   display_name              = "k3s-servers"
   compartment_id            = var.compartment_ocid
-  instance_configuration_id = var.paid_account == true ? oci_core_instance_configuration.k3s_server_template_paid[0].id : oci_core_instance_configuration.k3s_server_template[0].id
+  instance_configuration_id = oci_core_instance_configuration.k3s_server_template.id
 
   placement_configurations {
     availability_domain = var.availability_domain

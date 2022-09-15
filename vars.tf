@@ -208,8 +208,3 @@ variable "expose_kubeapi" {
   type    = bool
   default = false
 }
-
-variable "paid_account" {
-  type    = bool
-  default = false
-}
