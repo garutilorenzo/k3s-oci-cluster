@@ -1,5 +1,23 @@
 #!/bin/bash
 
+check_os() {
+  name=$(cat /etc/os-release | grep ^NAME= | sed 's/"//g')
+  clean_name=${name#*=}
+
+  version=$(cat /etc/os-release | grep ^VERSION_ID= | sed 's/"//g')
+  clean_version=${version#*=}
+  major=${clean_version%.*}
+  minor=${clean_version#*.}
+  
+  if [[ "$clean_name" == "Ubuntu" ]]; then
+    operating_system="ubuntu"
+  elif [[ "$clean_name" == "Oracle Linux Server" ]]; then
+    operating_system="oraclelinux"
+  else
+    operating_system="undef"
+  fi
+}
+
 wait_lb() {
 while [ true ]
 do
@@ -12,11 +30,7 @@ do
 done
 }
 
-if test -f /etc/lsb-release; then
-  operating_system="ubuntu"
-else
-  operating_system="oraclelinux"
-fi
+check_os
 
 if [[ "$operating_system" == "ubuntu" ]]; then
   # Disable firewall 
@@ -50,9 +64,11 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
   dnf -y update
   dnf -y install jq curl
   %{ if install_nginx_ingress }
-  if grep -q "el9" /etc/os-release; then
+  if [[ $major -eq 9 ]]; then
+    dnf -y install oraclelinux-developer-release-el9
     dnf -y install python39-oci-cli python3-jinja2 nginx-all-modules
   else
+    dnf -y install oraclelinux-developer-release-el8
     dnf -y module enable nginx:1.20 python36:3.6
     dnf -y install python36-oci-cli python3-jinja2 nginx-all-modules
   fi
@@ -69,7 +85,7 @@ k3s_install_params=("--node-ip $local_ip")
 k3s_install_params+=("--flannel-iface $flannel_iface")
 
 if [[ "$operating_system" == "oraclelinux" ]]; then
-  k3s_install_params+=(="--selinux")
+  k3s_install_params+=("--selinux")
 fi
 
 INSTALL_PARAMS="$${k3s_install_params[*]}"
