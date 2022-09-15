@@ -201,7 +201,7 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `compartment_ocid` | `yes`        | Set the correct compartment ocid. See [how](#oracle-provider-setup) to find the compartment ocid |
 | `cluster_name` | `yes`        | the name of your K3s cluster. Default: k3s-cluster |
 | `k3s_token` | `yes`        | The token of your K3s cluster. [How to](#generate-random-token) generate a random token |
-| `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32), make sure to enable expose_kubeapi to reach the kubeapi server |
+| `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
 | `compute_shape`  | `no`  | Compute shape to use. Default VM.Standard.A1.Flex. **NOTE** Is mandatory to use this compute shape for provision 4 always free VMs |
 | `os_image_id`  | `no`  | Image id to use. Default image: Canonical-Ubuntu-20.04-aarch64-2022.01.18-0. See [how](#how-to-list-all-the-os-images) to list all available OS images |
@@ -681,13 +681,15 @@ argocd-repo-server-5576f8d84b-sgbbt                 1/1     Running   0         
 argocd-server-76cf7d4c7b-jq9qx                      1/1     Running   0          8m52s
 ```
 
-To fetch the initial admin password, to be able to do this you need to expose your kubeapi-server and fetch the
+To fetch the initial admin password, to be able to do this you need to expose your kubeapi-server (set *expose_kubeapi* variable to ture) and fetch the
 kubeconfig from one of the server nodes, it will be in (/var/lib/rancher/k3s/server/cred/admin.kubeconfig): 
+
 ```
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
 To connect to the UI (make sure to copy the kubeconfig to your local machine first):
+
 ```
 kubectl -n argocd port-forward service/argocd-server -n argocd 8080:443
 ```
