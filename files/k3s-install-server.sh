@@ -245,7 +245,6 @@ if [[ "$first_last" == "first" ]]; then
 
   systemctl enable --now iscsid.service
   kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/${longhorn_release}/deploy/longhorn.yaml
-  kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/${longhorn_release}/examples/storageclass.yaml
 fi
 %{ endif }
 
