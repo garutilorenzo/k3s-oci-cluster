@@ -222,7 +222,7 @@ if [[ "$first_instance" == "$instance_id" ]]; then
 else
   echo ":( Cluster join"
   wait_lb
-  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --server https://${k3s_url}:6443 $INSTALL_PARAMS); do
+  until (curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=$K3S_VERSION K3S_TOKEN=${k3s_token} sh -s - --server https://${k3s_url}:6443 $INSTALL_PARAMS); do
     echo 'k3s did not install correctly'
     sleep 2
   done
