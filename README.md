@@ -27,6 +27,7 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
 * [Deploy](#deploy)
 * [Deploy a sample stack](#deploy-a-sample-stack)
 * [Clean up](#clean-up)
+* [Known Bugs](#known-bugs)
 
 **Note** choose a region with enough ARM capacity
 
@@ -43,6 +44,25 @@ To use this repo you will need:
 * an Oracle Cloud account. You can register [here](https://cloud.oracle.com)
 
 Once you get the account, follow the *Before you begin* and *1. Prepare* step in [this](https://docs.oracle.com/en-us/iaas/developer-tutorials/tutorials/tf-provider/01-summary.htm) document.
+
+### Terraform OCI user creation (Optional)
+
+Is always recommended to create a separate user an group to use with Terraform. This user must have less privileges possible (Zero trust policy). This is an example policy that allow *terraform-group* to manage all the resources needed by this module:
+
+```
+Allow group terraform-group to manage virtual-network-family  in compartment id <compartment_ocid>
+Allow group terraform-group to manage instance-family  in compartment id <compartment_ocid>
+Allow group terraform-group to manage compute-management-family  in compartment id <compartment_ocid>
+Allow group terraform-group to manage volume-family  in compartment id <compartment_ocid>
+Allow group terraform-group to manage load-balancers  in compartment id <compartment_ocid>
+Allow group terraform-group to manage network-load-balancers  in compartment id <compartment_ocid>
+Allow group terraform-group to manage dynamic-groups in compartment id <compartment_ocid>
+Allow group terraform-group to manage policies in compartment id <compartment_ocid>
+Allow group terraform-group to read network-load-balancers  in compartment id <compartment_ocid>
+```
+
+The user and the group have to be manually created before using this module.
+To create the user go to Identity & Security -> Users, then create the group in Identity & Security -> Groups and associate the newly created user to the group. The last step is to create the policy in Identity & Security -> Policies.
 
 #### Example RSA key generation
 
@@ -110,7 +130,6 @@ module "k3s_cluster" {
   my_public_ip_cidr   = "<change_me>"
   cluster_name        = "<change_me>"
   environment         = "staging"
-  k3s_token           = "<change_me>"
   source              = "github.com/garutilorenzo/k3s-oci-cluster"
 }
 
@@ -200,11 +219,12 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `availability_domain` | `yes`        | Set the correct availability domain. See [how](#how-to-find-the-availability-doamin-name) to find the availability domain|
 | `compartment_ocid` | `yes`        | Set the correct compartment ocid. See [how](#oracle-provider-setup) to find the compartment ocid |
 | `cluster_name` | `yes`        | the name of your K3s cluster. Default: k3s-cluster |
-| `k3s_token` | `yes`        | The token of your K3s cluster. [How to](#generate-random-token) generate a random token |
 | `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
+| `os_image_id`  | `yes`  | Image id to use. See [how](#how-to-list-all-the-os-images) to list all available OS images |
+| `k3s_version`  | `no`  | K3s version. Default: latest |
+| `k3s_subnet`  | `no`  | Subnet where K3s will be exposed. Rquired if the subnet is different from the default gw subnet (Eg. 192.168.1.0/24). Default: default_route_table |
 | `compute_shape`  | `no`  | Compute shape to use. Default VM.Standard.A1.Flex. **NOTE** Is mandatory to use this compute shape for provision 4 always free VMs |
-| `os_image_id`  | `no`  | Image id to use. Default image: Canonical-Ubuntu-20.04-aarch64-2022.01.18-0. See [how](#how-to-list-all-the-os-images) to list all available OS images |
 | `oci_core_vcn_dns_label`  | `no`  | VCN DNS label. Default: defaultvcn |
 | `oci_core_subnet_dns_label10`  | `no`  | First subnet DNS label. Default: defaultsubnet10 |
 | `oci_core_subnet_dns_label11`  | `no`  | Second subnet DNS label. Default: defaultsubnet11 |
@@ -225,7 +245,7 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 nginx_ingress_controller_http_nodeport
 | `nginx_ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
 | `nginx_ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
-| `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true  |
+| `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true. To use longhorn set the *k3s_version* < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)  |
 | `longhorn_release`  | `no`  | Longhorn release. Default: v1.2.3  |
 | `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
 | `certmanager_release`  | `no`  | Cert manager release. Default: v1.8.2  |
@@ -239,13 +259,6 @@ nginx_ingress_controller_http_nodeport
 | `expose_kubeapi`  | `no`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
 | `PATH_TO_PUBLIC_KEY`     | `no`       | Path to your public ssh key (Default: "~/.ssh/id_rsa.pub) |
 
-#### Generate random token
-
-Generate random k3s token with:
-
-```
-cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 55 | head -n 1
-```
 
 #### How to find the availability doamin name
 
@@ -339,6 +352,8 @@ The other resources created by terraform are:
 ## Cluster resource deployed
 
 This setup will automatically install [longhorn](https://longhorn.io/). Longhorn is a *Cloud native distributed block storage for Kubernetes*. To disable the longhorn deployment set *install_longhorn* variable to *false*
+
+**NOTE** to use longhorn set the *k3s_version* < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)
 
 ### Nginx ingress controller
 
@@ -772,3 +787,30 @@ kubectl delete -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluste
 ```
 terraform destroy
 ```
+
+## Known Bugs
+
+### 409-Conflict
+
+If you see this error during the infrastructure destruction:
+
+```
+Error: 409-Conflict, Invalid State Transition of NLB lifeCycle state from Updating to Updating
+│ Suggestion: The resource is in a conflicted state. Please retry again or contact support for help with service: Network Load Balancer Listener
+│ Documentation: https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/network_load_balancer_listener 
+│ API Reference: https://docs.oracle.com/iaas/api/#/en/networkloadbalancer/20200501/Listener/DeleteListener 
+```
+
+re-run *terraform destroy*
+
+### kubectl exec failure
+
+The runc version in k3s containerd version 1.6.6 contains a regression that prevents anyone from executing a command and attaching to the container's TTY (exec -it) whenever someone runs systemctl daemon-reload. Alternatively, the user may run into this issue on SELinux-enforced systems. [Ref](https://github.com/k3s-io/k3s/issues/6064).
+
+```
+kubectl exec -it -n kube-system cilium-6lqp9 -- cilium status
+Defaulted container "cilium-agent" out of: cilium-agent, mount-cgroup (init), apply-sysctl-overwrites (init), mount-bpf-fs (init), wait-for-node-init (init), clean-cilium-state (init)
+error: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "b67e6e00172071996430dac5c97352e4d0c9fa3b3888e8daece5197c4649b4d1": OCI runtime exec failed: exec failed: unable to start container process: open /dev/pts/0: operation not permitted: unknown
+```
+
+To solve this issue downgrade to k3s v1.23

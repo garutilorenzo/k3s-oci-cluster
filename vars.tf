@@ -18,12 +18,22 @@ variable "environment" {
   type = string
 }
 
-variable "k3s_token" {
+variable "cluster_name" {
   type = string
 }
 
-variable "cluster_name" {
+variable "os_image_id" {
   type = string
+}
+
+variable "k3s_version" {
+  type    = string
+  default = "latest"
+}
+
+variable "k3s_subnet" {
+  type    = string
+  default = "default_route_table"
 }
 
 variable "fault_domains" {
@@ -35,11 +45,6 @@ variable "PATH_TO_PUBLIC_KEY" {
   type        = string
   default     = "~/.ssh/id_rsa.pub"
   description = "Path to your public key"
-}
-
-variable "os_image_id" {
-  type    = string
-  default = "ocid1.image.oc1.eu-zurich-1.aaaaaaaailwa7imzkgvd5oc7nrfzq4b7cpk7xbkiuz2kjzvskhthsbyn2vmq" # Canonical-Ubuntu-22.04-aarch64-2022.06.16-0
 }
 
 variable "compute_shape" {
@@ -159,6 +164,11 @@ variable "install_nginx_ingress" {
   default = true
 }
 
+variable "nginx_ingress_release" {
+  type    = string
+  default = "v1.3.1"
+}
+
 variable "install_certmanager" {
   type    = bool
   default = true
@@ -166,7 +176,7 @@ variable "install_certmanager" {
 
 variable "certmanager_release" {
   type    = string
-  default = "v1.8.2"
+  default = "v1.9.1"
 }
 
 variable "certmanager_email_address" {
@@ -181,7 +191,7 @@ variable "install_longhorn" {
 
 variable "longhorn_release" {
   type    = string
-  default = "v1.2.3"
+  default = "v1.3.1"
 }
 
 variable "install_argocd" {
