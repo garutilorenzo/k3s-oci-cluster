@@ -16,6 +16,11 @@ check_os() {
   else
     operating_system="undef"
   fi
+
+  echo "K3S install process running on: "
+  echo "OS: $operating_system"
+  echo "OS Major Release: $major"
+  echo "OS Minor Release: $minor"
 }
 
 wait_lb() {
@@ -50,6 +55,11 @@ if [[ "$operating_system" == "ubuntu" ]]; then
   systemctl enable nginx
   pip install oci-cli
   %{ endif }
+  
+  # Fix /var/log/journal dir size
+  echo "SystemMaxUse=100M" >> /etc/systemd/journald.conf
+  echo "SystemMaxFileSize=100M" >> /etc/systemd/journald.conf
+  systemctl restart systemd-journald
 fi
 
 if [[ "$operating_system" == "oraclelinux" ]]; then
