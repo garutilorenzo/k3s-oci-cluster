@@ -179,18 +179,21 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
   fi
 fi
 
-local_ip=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/vnics/ | jq -r '.[0].privateIp')
-flannel_iface=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)')
-
 export OCI_CLI_AUTH=instance_principal
 first_instance=$(oci compute instance list --compartment-id ${compartment_ocid} --availability-domain ${availability_domain} --lifecycle-state RUNNING --sort-by TIMECREATED  | jq -r '.data[]|select(."display-name" | endswith("k3s-servers")) | .["display-name"]' | tail -n 1)
 instance_id=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance | jq -r '.displayName')
 first_last="last"
 
-k3s_install_params=("--node-ip $local_ip")
+k3s_install_params=("--tls-san ${k3s_tls_san}")
+
+%{ if k3s_subnet != "default_route_table" } 
+local_ip=$(ip -4 route ls ${k3s_subnet} | grep -Po '(?<=src )(\S+)')
+flannel_iface=$(ip -4 route ls ${k3s_subnet} | grep -Po '(?<=dev )(\S+)')
+
+k3s_install_params+=("--node-ip $local_ip")
 k3s_install_params+=("--advertise-address $local_ip")
 k3s_install_params+=("--flannel-iface $flannel_iface")
-k3s_install_params+=("--tls-san ${k3s_tls_san}")
+%{ endif }
 
 %{ if install_nginx_ingress } 
 k3s_install_params+=("--disable traefik")

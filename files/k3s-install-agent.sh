@@ -88,11 +88,15 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
   setsebool httpd_can_network_connect on -P
 fi
 
-local_ip=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/vnics/ | jq -r '.[0].privateIp')
-flannel_iface=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)')
+k3s_install_params=()
 
-k3s_install_params=("--node-ip $local_ip")
+%{ if k3s_subnet != "default_route_table" } 
+local_ip=$(ip -4 route ls ${k3s_subnet} | grep -Po '(?<=src )(\S+)')
+flannel_iface=$(ip -4 route ls ${k3s_subnet} | grep -Po '(?<=dev )(\S+)')
+
+k3s_install_params+=("--node-ip $local_ip")
 k3s_install_params+=("--flannel-iface $flannel_iface")
+%{ endif }
 
 if [[ "$operating_system" == "oraclelinux" ]]; then
   k3s_install_params+=("--selinux")

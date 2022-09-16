@@ -11,6 +11,7 @@ data "template_cloudinit_config" "k3s_server_tpl" {
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/files/k3s-install-server.sh", {
       k3s_version                             = var.k3s_version,
+      k3s_subnet                              = var.k3s_subnet,
       k3s_token                               = random_password.k3s_token.result,
       is_k3s_server                           = true,
       install_nginx_ingress                   = var.install_nginx_ingress,
@@ -40,6 +41,7 @@ data "template_cloudinit_config" "k3s_worker_tpl" {
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/files/k3s-install-agent.sh", {
       k3s_version                             = var.k3s_version,
+      k3s_subnet                              = var.k3s_subnet,
       k3s_token                               = random_password.k3s_token.result,
       is_k3s_server                           = false,
       k3s_url                                 = oci_load_balancer_load_balancer.k3s_load_balancer.ip_address_details[0].ip_address,

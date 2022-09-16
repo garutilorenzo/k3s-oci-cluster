@@ -31,6 +31,11 @@ variable "k3s_version" {
   default = "latest"
 }
 
+variable "k3s_subnet" {
+  type    = string
+  default = "default_route_table"
+}
+
 variable "fault_domains" {
   type    = list(any)
   default = ["FAULT-DOMAIN-1", "FAULT-DOMAIN-2", "FAULT-DOMAIN-3"]
