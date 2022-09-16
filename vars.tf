@@ -26,6 +26,11 @@ variable "os_image_id" {
   type = string
 }
 
+variable "k3s_version" {
+  type    = string
+  default = "latest"
+}
+
 variable "fault_domains" {
   type    = list(any)
   default = ["FAULT-DOMAIN-1", "FAULT-DOMAIN-2", "FAULT-DOMAIN-3"]

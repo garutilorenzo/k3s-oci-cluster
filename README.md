@@ -221,6 +221,7 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
 | `os_image_id`  | `yes`  | Image id to use. See [how](#how-to-list-all-the-os-images) to list all available OS images |
+| `k3s_version`  | `no`  | K3s version. Default: latest |
 | `compute_shape`  | `no`  | Compute shape to use. Default VM.Standard.A1.Flex. **NOTE** Is mandatory to use this compute shape for provision 4 always free VMs |
 | `oci_core_vcn_dns_label`  | `no`  | VCN DNS label. Default: defaultvcn |
 | `oci_core_subnet_dns_label10`  | `no`  | First subnet DNS label. Default: defaultsubnet10 |

@@ -1,7 +1,7 @@
 resource "oci_core_instance_configuration" "k3s_server_template" {
 
   compartment_id = var.compartment_ocid
-  display_name   = "Ubuntu 20.04 instance k3s server configuration"
+  display_name   = "k3s server configuration"
 
   freeform_tags = {
     "provisioner"           = "terraform"
@@ -44,7 +44,7 @@ resource "oci_core_instance_configuration" "k3s_server_template" {
         nsg_ids          = [oci_core_network_security_group.lb_to_instances_kubeapi.id]
       }
 
-      display_name = "Ubuntu k3s server template"
+      display_name = "k3s server template"
 
       metadata = {
         "ssh_authorized_keys" = file(var.PATH_TO_PUBLIC_KEY)
@@ -67,7 +67,7 @@ resource "oci_core_instance_configuration" "k3s_server_template" {
 resource "oci_core_instance_configuration" "k3s_worker_template" {
 
   compartment_id = var.compartment_ocid
-  display_name   = "Ubuntu 20.04 instance k3s worker configuration"
+  display_name   = "k3s worker configuration"
 
   freeform_tags = {
     "provisioner"           = "terraform"
@@ -110,7 +110,7 @@ resource "oci_core_instance_configuration" "k3s_worker_template" {
         nsg_ids          = [oci_core_network_security_group.lb_to_instances_http.id]
       }
 
-      display_name = "Ubuntu k3s worker template"
+      display_name = "k3s worker template"
 
       metadata = {
         "ssh_authorized_keys" = file(var.PATH_TO_PUBLIC_KEY)

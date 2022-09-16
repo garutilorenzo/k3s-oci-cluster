@@ -196,10 +196,16 @@ fi
 
 INSTALL_PARAMS="$${k3s_install_params[*]}"
 
+%{ if k3s_version == "latest" }
+K3S_VERSION=$(curl --silent https://api.github.com/repos/k3s-io/k3s/releases/latest | jq -r '.name')
+%{ else }
+K3S_VERSION="${k3s_version}"
+%{ endif }
+
 if [[ "$first_instance" == "$instance_id" ]]; then
   echo "I'm the first yeeee: Cluster init!"
   first_last="first"
-  until (curl -sfL https://get.k3s.io | K3S_TOKEN=${k3s_token} sh -s - --cluster-init $INSTALL_PARAMS); do
+  until (curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=$K3S_VERSION K3S_TOKEN=${k3s_token} sh -s - --cluster-init $INSTALL_PARAMS); do
     echo 'k3s did not install correctly'
     sleep 2
   done
