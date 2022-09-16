@@ -23,6 +23,8 @@ variable "region" {
 }
 
 module "k3s_cluster" {
+  # k3s_version               = "v1.23.8+k3s2" # Fix kubectl exec failure
+  # k3s_version               = "v1.24.4+k3s1" # Kubernetes version compatible with longhorn
   region                    = var.region
   availability_domain       = "<change_me>"
   tenancy_ocid              = var.tenancy_ocid

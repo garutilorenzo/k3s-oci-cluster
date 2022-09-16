@@ -182,7 +182,6 @@ fi
 export OCI_CLI_AUTH=instance_principal
 first_instance=$(oci compute instance list --compartment-id ${compartment_ocid} --availability-domain ${availability_domain} --lifecycle-state RUNNING --sort-by TIMECREATED  | jq -r '.data[]|select(."display-name" | endswith("k3s-servers")) | .["display-name"]' | tail -n 1)
 instance_id=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance | jq -r '.displayName')
-first_last="last"
 
 k3s_install_params=("--tls-san ${k3s_tls_san}")
 
@@ -217,7 +216,6 @@ K3S_VERSION="${k3s_version}"
 
 if [[ "$first_instance" == "$instance_id" ]]; then
   echo "I'm the first yeeee: Cluster init!"
-  first_last="first"
   until (curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=$K3S_VERSION K3S_TOKEN=${k3s_token} sh -s - --cluster-init $INSTALL_PARAMS); do
     echo 'k3s did not install correctly'
     sleep 2
@@ -238,7 +236,7 @@ until kubectl get pods -A | grep 'Running'; do
 done
 
 %{ if install_longhorn }
-if [[ "$first_last" == "first" ]]; then
+if [[ "$first_instance" == "$instance_id" ]]; then
   if [[ "$operating_system" == "ubuntu" ]]; then
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  open-iscsi curl util-linux
   fi
@@ -249,7 +247,7 @@ fi
 %{ endif }
 
 %{ if install_nginx_ingress }
-if [[ "$first_last" == "first" ]]; then
+if [[ "$first_instance" == "$instance_id" ]]; then
   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${nginx_ingress_release}/deploy/static/provider/baremetal/deploy.yaml
   NGINX_RESOURCES_FILE=/root/nginx-ingress-resources.yaml
   render_nginx_config
@@ -258,7 +256,7 @@ fi
 %{ endif }
 
 %{ if install_certmanager }
-if [[ "$first_last" == "first" ]]; then
+if [[ "$first_instance" == "$instance_id" ]]; then
   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${certmanager_release}/cert-manager.yaml
   render_staging_issuer /root/staging_issuer.yaml
   render_prod_issuer /root/prod_issuer.yaml

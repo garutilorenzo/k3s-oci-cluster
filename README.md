@@ -27,6 +27,7 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
 * [Deploy](#deploy)
 * [Deploy a sample stack](#deploy-a-sample-stack)
 * [Clean up](#clean-up)
+* [Known Bugs](#known-bugs)
 
 **Note** choose a region with enough ARM capacity
 
@@ -244,7 +245,7 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 nginx_ingress_controller_http_nodeport
 | `nginx_ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
 | `nginx_ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
-| `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true  |
+| `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true. To use longhorn set the *k3s_version* < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)  |
 | `longhorn_release`  | `no`  | Longhorn release. Default: v1.2.3  |
 | `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
 | `certmanager_release`  | `no`  | Cert manager release. Default: v1.8.2  |
@@ -347,6 +348,8 @@ The other resources created by terraform are:
 ## Cluster resource deployed
 
 This setup will automatically install [longhorn](https://longhorn.io/). Longhorn is a *Cloud native distributed block storage for Kubernetes*. To disable the longhorn deployment set *install_longhorn* variable to *false*
+
+**NOTE** to use longhorn set the *k3s_version* < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)
 
 ### Nginx ingress controller
 
@@ -749,3 +752,30 @@ kubectl delete -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluste
 ```
 terraform destroy
 ```
+
+## Known Bugs
+
+### 409-Conflict
+
+If you see this error during the infrastructure destruction:
+
+```
+Error: 409-Conflict, Invalid State Transition of NLB lifeCycle state from Updating to Updating
+│ Suggestion: The resource is in a conflicted state. Please retry again or contact support for help with service: Network Load Balancer Listener
+│ Documentation: https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/network_load_balancer_listener 
+│ API Reference: https://docs.oracle.com/iaas/api/#/en/networkloadbalancer/20200501/Listener/DeleteListener 
+```
+
+re-run *terraform destroy*
+
+### kubectl exec failure
+
+The runc version in k3s containerd version 1.6.6 contains a regression that prevents anyone from executing a command and attaching to the container's TTY (exec -it) whenever someone runs systemctl daemon-reload. Alternatively, the user may run into this issue on SELinux-enforced systems. [Ref](https://github.com/k3s-io/k3s/issues/6064).
+
+```
+kubectl exec -it -n kube-system cilium-6lqp9 -- cilium status
+Defaulted container "cilium-agent" out of: cilium-agent, mount-cgroup (init), apply-sysctl-overwrites (init), mount-bpf-fs (init), wait-for-node-init (init), clean-cilium-state (init)
+error: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec "b67e6e00172071996430dac5c97352e4d0c9fa3b3888e8daece5197c4649b4d1": OCI runtime exec failed: exec failed: unable to start container process: open /dev/pts/0: operation not permitted: unknown
+```
+
+To solve this issue downgrade to k3s v1.23
