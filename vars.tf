@@ -18,16 +18,22 @@ variable "environment" {
   type = string
 }
 
-variable "k3s_token" {
-  type = string
-}
-
 variable "cluster_name" {
   type = string
 }
 
 variable "os_image_id" {
   type = string
+}
+
+variable "k3s_version" {
+  type    = string
+  default = "latest"
+}
+
+variable "k3s_subnet" {
+  type    = string
+  default = "default_route_table"
 }
 
 variable "fault_domains" {

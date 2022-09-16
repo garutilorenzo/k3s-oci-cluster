@@ -1,3 +1,8 @@
+resource "random_password" "k3s_token" {
+  length  = 55
+  special = false
+}
+
 data "template_cloudinit_config" "k3s_server_tpl" {
   gzip          = true
   base64_encode = true
@@ -5,7 +10,9 @@ data "template_cloudinit_config" "k3s_server_tpl" {
   part {
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/files/k3s-install-server.sh", {
-      k3s_token                               = var.k3s_token,
+      k3s_version                             = var.k3s_version,
+      k3s_subnet                              = var.k3s_subnet,
+      k3s_token                               = random_password.k3s_token.result,
       is_k3s_server                           = true,
       install_nginx_ingress                   = var.install_nginx_ingress,
       nginx_ingress_release                   = var.nginx_ingress_release,
@@ -33,10 +40,14 @@ data "template_cloudinit_config" "k3s_worker_tpl" {
   part {
     content_type = "text/x-shellscript"
     content = templatefile("${path.module}/files/k3s-install-agent.sh", {
-      k3s_token                               = var.k3s_token,
+      k3s_version                             = var.k3s_version,
+      k3s_subnet                              = var.k3s_subnet,
+      k3s_token                               = random_password.k3s_token.result,
       is_k3s_server                           = false,
       k3s_url                                 = oci_load_balancer_load_balancer.k3s_load_balancer.ip_address_details[0].ip_address,
       http_lb_port                            = var.http_lb_port,
+      install_nginx_ingress                   = var.install_nginx_ingress,
+      install_longhorn                        = var.install_longhorn,
       https_lb_port                           = var.https_lb_port,
       nginx_ingress_controller_http_nodeport  = var.nginx_ingress_controller_http_nodeport,
       nginx_ingress_controller_https_nodeport = var.nginx_ingress_controller_https_nodeport,
