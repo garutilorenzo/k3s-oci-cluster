@@ -6,7 +6,7 @@ resource "oci_core_instance_pool" "k3s_workers" {
 
   lifecycle {
     create_before_destroy = true
-    ignore_changes        = [load_balancers, freeform_tags]
+    ignore_changes        = [load_balancers, freeform_tags, instance_configuration_id]
   }
 
   display_name              = "k3s-workers"
