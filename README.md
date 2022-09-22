@@ -16,6 +16,7 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
 
 * [Important notes](#important-notes)
 * [Requirements](#requirements)
+* [Supported OS](#supported-os)
 * [Example RSA key generation](#example-rsa-key-generation)
 * [Project setup](#project-setup)
 * [Oracle provider setup](#oracle-provider-setup)
@@ -45,6 +46,13 @@ To use this repo you will need:
 
 Once you get the account, follow the *Before you begin* and *1. Prepare* step in [this](https://docs.oracle.com/en-us/iaas/developer-tutorials/tutorials/tf-provider/01-summary.htm) document.
 
+### Supported OS
+
+This module was tested with:
+
+* Ubuntu 20.04, 22.04 (ubuntu remote user)
+* Oracle Linux 8, 9 (opc remote user)
+
 ### Terraform OCI user creation (Optional)
 
 Is always recommended to create a separate user an group to use with Terraform. This user must have less privileges possible (Zero trust policy). This is an example policy that allow *terraform-group* to manage all the resources needed by this module:
@@ -61,7 +69,7 @@ Allow group terraform-group to manage policies in compartment id <compartment_oc
 Allow group terraform-group to read network-load-balancers  in compartment id <compartment_ocid>
 ```
 
-The user and the group have to be manually created before using this module.
+See [how](#oracle-provider-setup) to find the compartment ocid. The user and the group have to be manually created before using this module.
 To create the user go to Identity & Security -> Users, then create the group in Identity & Security -> Groups and associate the newly created user to the group. The last step is to create the policy in Identity & Security -> Policies.
 
 #### Example RSA key generation
@@ -275,7 +283,7 @@ oci iam availability-domain list
 
 #### How to list all the OS images
 
-To filter the OS images by shape and OS run this command on che Cloud Shell:
+To filter the OS images by shape and OS run this command on che Cloud Shell. You can filter by OS: Canonical Ubuntu or Oracle Linux:
 
 ```
 oci compute image list --compartment-id <compartment_ocid> --operating-system "Canonical Ubuntu" --shape "VM.Standard.A1.Flex"
@@ -308,8 +316,6 @@ oci compute image list --compartment-id <compartment_ocid> --operating-system "C
       "time-created": "2022-01-27T22:53:34.270000+00:00"
     },
 ```
-
-**Note:** this setup was only tested with Ubuntu 20.04
 
 ## Notes about OCI always free resources
 
