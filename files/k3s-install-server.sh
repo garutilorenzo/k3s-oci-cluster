@@ -273,7 +273,7 @@ fi
 %{ endif }
 
 %{ if install_argocd }
-if [[ "$first_last" == "first" ]]; then
+if [[ "$first_instance" == "$instance_id" ]]; then
   kubectl create namespace argocd
   kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/${argocd_release}/manifests/install.yaml
 
