@@ -258,6 +258,10 @@ nginx_ingress_controller_http_nodeport
 | `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
 | `certmanager_release`  | `no`  | Cert manager release. Default: v1.8.2  |
 | `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Defaul: changeme@example.com  |
+| `install_argocd`  | `no`  | Boolean value, install [Argo CD](https://argo-cd.readthedocs.io/en/stable/) "a declarative, GitOps continuous delivery tool for Kubernetes.". Default: true  |
+| `argocd_release`  | `no`  | Argo CD release. Default: v2.4.11  |
+| `install_argocd_image_updater`  | `no`  | Boolean value, install [Argo CD Image Updater](https://argocd-image-updater.readthedocs.io/en/stable/) "A tool to automatically update the container images of Kubernetes workloads that are managed by Argo CD.". Default: true  |
+| `argocd_image_updater_release`  | `no`  | Argo CD release Image Updater. Default: v0.12.0  |
 | `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
 | `unique_tag_value`  | `no`  | Unique value used with  unique_tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster |
 | `expose_kubeapi`  | `no`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
@@ -686,6 +690,37 @@ longhorn-manager-s6wql                      1/1     Running   0               9m
 longhorn-manager-zrrf2                      1/1     Running   0               9m
 longhorn-ui-9fdb94f9-6shsr                  1/1     Running   0               8m59s
 ```
+
+#### Argocd check
+
+You can verify that all pods are running:
+```
+root@inst-hmgnl-k3s-servers:~# kubectl get pods -n argocd
+NAME                                                READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0                     1/1     Running   0          8m51s
+argocd-applicationset-controller-7b74965f8c-mjl97   1/1     Running   0          8m53s
+argocd-dex-server-7f75d56bc6-j62hb                  1/1     Running   0          8m53s
+argocd-notifications-controller-54dd686846-lggrz    1/1     Running   0          8m53s
+argocd-redis-5dff748d9c-s5q2l                       1/1     Running   0          8m52s
+argocd-repo-server-5576f8d84b-sgbbt                 1/1     Running   0          8m52s
+argocd-server-76cf7d4c7b-jq9qx                      1/1     Running   0          8m52s
+```
+
+To fetch the initial admin password, to be able to do this you need to expose your kubeapi-server (set *expose_kubeapi* variable to ture) and fetch the
+kubeconfig from one of the server nodes, it will be in (/var/lib/rancher/k3s/server/cred/admin.kubeconfig): 
+
+```
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+```
+
+To connect to the UI (make sure to copy the kubeconfig to your local machine first):
+
+```
+kubectl -n argocd port-forward service/argocd-server -n argocd 8080:443
+```
+
+After that you should be able to visit the ArgoCD UI: https://localhost:8080
+
 
 ## Deploy a sample stack
 
