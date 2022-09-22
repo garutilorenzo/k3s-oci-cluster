@@ -40,7 +40,7 @@ resource "oci_network_load_balancer_backend" "k3s_http_backend" {
     oci_core_instance_pool.k3s_workers,
   ]
 
-  count                    = var.k3s_server_pool_size
+  count                    = var.k3s_worker_pool_size
   backend_set_name         = oci_network_load_balancer_backend_set.k3s_http_backend_set.name
   network_load_balancer_id = oci_network_load_balancer_network_load_balancer.k3s_public_lb.id
   name                     = format("%s:%s", data.oci_core_instance_pool_instances.k3s_workers_instances.instances[count.index].id, var.http_lb_port)
@@ -74,7 +74,7 @@ resource "oci_network_load_balancer_backend" "k3s_https_backend" {
     oci_core_instance_pool.k3s_workers,
   ]
 
-  count                    = var.k3s_server_pool_size
+  count                    = var.k3s_worker_pool_size
   backend_set_name         = oci_network_load_balancer_backend_set.k3s_https_backend_set.name
   network_load_balancer_id = oci_network_load_balancer_network_load_balancer.k3s_public_lb.id
   name                     = format("%s:%s", data.oci_core_instance_pool_instances.k3s_workers_instances.instances[count.index].id, var.https_lb_port)
