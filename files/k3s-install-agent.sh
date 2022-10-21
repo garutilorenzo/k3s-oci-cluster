@@ -23,6 +23,23 @@ check_os() {
   echo "OS Minor Release: $minor"
 }
 
+install_oci_cli_ubuntu(){
+  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y python3 python3-pip nginx
+  systemctl enable nginx
+  pip install oci-cli
+}
+
+install_oci_cli_oracle(){
+  if [[ $major -eq 9 ]]; then
+    dnf -y install oraclelinux-developer-release-el9
+    dnf -y install python39-oci-cli python3-jinja2 nginx-all-modules
+  else
+    dnf -y install oraclelinux-developer-release-el8
+    dnf -y module enable nginx:1.20 python36:3.6
+    dnf -y install python36-oci-cli python3-jinja2 nginx-all-modules
+  fi
+}
+
 wait_lb() {
 while [ true ]
 do
@@ -51,15 +68,11 @@ if [[ "$operating_system" == "ubuntu" ]]; then
   apt-get install -y software-properties-common jq
   DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
   %{ if install_nginx_ingress }
-  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y python3 python3-pip nginx
-  systemctl enable nginx
-  pip install oci-cli
+  install_oci_cli_ubuntu
   %{ endif }
 
   %{ if install_traefik2 }
-  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y python3 python3-pip nginx
-  systemctl enable nginx
-  pip install oci-cli
+  install_oci_cli_ubuntu
   %{ endif }
   
   # Fix /var/log/journal dir size
@@ -80,25 +93,11 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
   dnf -y update
   dnf -y install jq curl
   %{ if install_nginx_ingress }
-  if [[ $major -eq 9 ]]; then
-    dnf -y install oraclelinux-developer-release-el9
-    dnf -y install python39-oci-cli python3-jinja2 nginx-all-modules
-  else
-    dnf -y install oraclelinux-developer-release-el8
-    dnf -y module enable nginx:1.20 python36:3.6
-    dnf -y install python36-oci-cli python3-jinja2 nginx-all-modules
-  fi
+  install_oci_cli_oracle
   %{ endif }
 
   %{ if install_traefik2 }
-  if [[ $major -eq 9 ]]; then
-    dnf -y install oraclelinux-developer-release-el9
-    dnf -y install python39-oci-cli python3-jinja2 nginx-all-modules
-  else
-    dnf -y install oraclelinux-developer-release-el8
-    dnf -y module enable nginx:1.20 python36:3.6
-    dnf -y install python36-oci-cli python3-jinja2 nginx-all-modules
-  fi
+  install_oci_cli_oracle
   %{ endif }
 
   # Nginx Selinux Fix
