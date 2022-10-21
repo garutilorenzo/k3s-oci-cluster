@@ -85,7 +85,7 @@ ports:
     protocol: TCP
     # Use nodeport if set. This is useful if you have configured Traefik in a
     # LoadBalancer
-    nodePort: ${ingress_controller_https_nodeport}
+    nodePort: ${ingress_controller_http_nodeport}
     # Port Redirections
     # Added in 2.2, you can make permanent redirects via entrypoints.
     # https://docs.traefik.io/routing/entrypoints/#redirection
