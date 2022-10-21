@@ -124,12 +124,12 @@ variable "https_lb_port" {
   default = 443
 }
 
-variable "nginx_ingress_controller_http_nodeport" {
+variable "ingress_controller_http_nodeport" {
   type    = number
   default = 30080
 }
 
-variable "nginx_ingress_controller_https_nodeport" {
+variable "ingress_controller_https_nodeport" {
   type    = number
   default = 30443
 }
@@ -157,6 +157,11 @@ variable "unique_tag_value" {
 variable "my_public_ip_cidr" {
   type        = string
   description = "My public ip CIDR"
+}
+
+variable "install_traefik2" {
+  type    = bool
+  default = false
 }
 
 variable "install_nginx_ingress" {

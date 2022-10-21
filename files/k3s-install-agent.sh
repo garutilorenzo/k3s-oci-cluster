@@ -55,6 +55,12 @@ if [[ "$operating_system" == "ubuntu" ]]; then
   systemctl enable nginx
   pip install oci-cli
   %{ endif }
+
+  %{ if install_traefik2 }
+  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y python3 python3-pip nginx
+  systemctl enable nginx
+  pip install oci-cli
+  %{ endif }
   
   # Fix /var/log/journal dir size
   echo "SystemMaxUse=100M" >> /etc/systemd/journald.conf
@@ -74,6 +80,17 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
   dnf -y update
   dnf -y install jq curl
   %{ if install_nginx_ingress }
+  if [[ $major -eq 9 ]]; then
+    dnf -y install oraclelinux-developer-release-el9
+    dnf -y install python39-oci-cli python3-jinja2 nginx-all-modules
+  else
+    dnf -y install oraclelinux-developer-release-el8
+    dnf -y module enable nginx:1.20 python36:3.6
+    dnf -y install python36-oci-cli python3-jinja2 nginx-all-modules
+  fi
+  %{ endif }
+
+  %{ if install_traefik2 }
   if [[ $major -eq 9 ]]; then
     dnf -y install oraclelinux-developer-release-el9
     dnf -y install python39-oci-cli python3-jinja2 nginx-all-modules
@@ -117,7 +134,7 @@ until (curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=$K3S_VERSION K3S_TOKEN
   sleep 2
 done
 
-%{ if install_nginx_ingress }
+proxy_protocol_stuff(){
 cat << 'EOF' > /root/find_ips.sh
 export OCI_CLI_AUTH=instance_principal
 private_ips=()
@@ -178,12 +195,12 @@ events {
 stream {
   upstream k3s-http {
     {% for private_ip in private_ips -%}
-    server {{ private_ip }}:${nginx_ingress_controller_http_nodeport} max_fails=3 fail_timeout=10s;
+    server {{ private_ip }}:${ingress_controller_http_nodeport} max_fails=3 fail_timeout=10s;
     {% endfor -%}
   }
   upstream k3s-https {
     {% for private_ip in private_ips -%}
-    server {{ private_ip }}:${nginx_ingress_controller_https_nodeport} max_fails=3 fail_timeout=10s;
+    server {{ private_ip }}:${ingress_controller_https_nodeport} max_fails=3 fail_timeout=10s;
     {% endfor -%}
   }
 
@@ -242,6 +259,14 @@ python3 /root/render_nginx_config.py
 nginx -t
 
 systemctl restart nginx
+}
+
+%{ if install_nginx_ingress }
+proxy_protocol_stuff
+%{ endif }
+
+%{ if install_traefik2 }
+proxy_protocol_stuff
 %{ endif }
 
 %{ if install_longhorn }

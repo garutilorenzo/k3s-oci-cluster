@@ -35,6 +35,144 @@ do
 done
 }
 
+render_traefil2_config() {
+cat << 'EOF' > "$TRAEFIK_VALUES_FILE"
+service:
+  enabled: true
+  type: NodePort
+
+# Configure ports
+ports:
+  # The name of this one can't be changed as it is used for the readiness and
+  # liveness probes, but you can adjust its config to your liking
+  traefik:
+    port: 9000
+    # Use hostPort if set.
+    # hostPort: 9000
+    #
+    # Use hostIP if set. If not set, Kubernetes will default to 0.0.0.0, which
+    # means it's listening on all your interfaces and all your IPs. You may want
+    # to set this value if you need traefik to listen on specific interface
+    # only.
+    # hostIP: 192.168.100.10
+
+    # Override the liveness/readiness port. This is useful to integrate traefik
+    # with an external Load Balancer that performs healthchecks.
+    # Default: ports.traefik.port
+    # healthchecksPort: 9000
+
+    # Override the liveness/readiness scheme. Useful for getting ping to
+    # respond on websecure entryPoint.
+    # healthchecksScheme: HTTPS
+
+    # Defines whether the port is exposed if service.type is LoadBalancer or
+    # NodePort.
+    #
+    # You SHOULD NOT expose the traefik port on production deployments.
+    # If you want to access it from outside of your cluster,
+    # use `kubectl port-forward` or create a secure ingress
+    expose: false
+    # The exposed port for this service
+    exposedPort: 9000
+    # The port protocol (TCP/UDP)
+    protocol: TCP
+  web:
+    port: 8000
+    # hostPort: 8000
+    expose: true 
+    exposedPort: 80
+    # The port protocol (TCP/UDP)
+    protocol: TCP
+    # Use nodeport if set. This is useful if you have configured Traefik in a
+    # LoadBalancer
+    nodePort: ${ingress_controller_https_nodeport}
+    # Port Redirections
+    # Added in 2.2, you can make permanent redirects via entrypoints.
+    # https://docs.traefik.io/routing/entrypoints/#redirection
+    # redirectTo: websecure
+    #
+    # Trust forwarded  headers information (X-Forwarded-*).
+    # forwardedHeaders:
+    #   trustedIPs: []
+    #   insecure: false
+    #
+    # Enable the Proxy Protocol header parsing for the entry point
+    proxyProtocol:
+      trustedIPs:
+        - 0.0.0.0/0
+        - 127.0.0.1/32
+      insecure: false
+  websecure:
+    port: 8443
+    # hostPort: 8443
+    expose: true
+    exposedPort: 443
+    # The port protocol (TCP/UDP)
+    protocol: TCP
+    nodePort: ${ingress_controller_https_nodeport}
+    # Enable HTTP/3.
+    # Requires enabling experimental http3 feature and tls.
+    # Note that you cannot have a UDP entrypoint with the same port.
+    # http3: true
+    # Set TLS at the entrypoint
+    # https://doc.traefik.io/traefik/routing/entrypoints/#tls
+    tls:
+      enabled: true
+      # this is the name of a TLSOption definition
+      options: ""
+      certResolver: ""
+      domains: []
+      # - main: example.com
+      #   sans:
+      #     - foo.example.com
+      #     - bar.example.com
+    #
+    # Trust forwarded  headers information (X-Forwarded-*).
+    # forwardedHeaders:
+    #   trustedIPs: []
+    #   insecure: false
+    #
+    # Enable the Proxy Protocol header parsing for the entry point
+    proxyProtocol:
+      trustedIPs:
+        - 0.0.0.0/0
+        - 127.0.0.1/32
+      insecure: false
+    #
+    # One can apply Middlewares on an entrypoint
+    # https://doc.traefik.io/traefik/middlewares/overview/
+    # https://doc.traefik.io/traefik/routing/entrypoints/#middlewares
+    # /!\ It introduces here a link between your static configuration and your dynamic configuration /!\
+    # It follows the provider naming convention: https://doc.traefik.io/traefik/providers/overview/#provider-namespace
+    # middlewares:
+    #   - namespace-name1@kubernetescrd
+    #   - namespace-name2@kubernetescrd
+    middlewares: []
+  metrics:
+    # When using hostNetwork, use another port to avoid conflict with node exporter:
+    # https://github.com/prometheus/prometheus/wiki/Default-port-allocations
+    port: 9100
+    # hostPort: 9100
+    # Defines whether the port is exposed if service.type is LoadBalancer or
+    # NodePort.
+    #
+    # You may not want to expose the metrics port on production deployments.
+    # If you want to access it from outside of your cluster,
+    # use `kubectl port-forward` or create a secure ingress
+    expose: false
+    # The exposed port for this service
+    exposedPort: 9100
+    # The port protocol (TCP/UDP)
+    protocol: TCP
+EOF
+}
+
+install_helm() {
+  curl -fsSL -o /root/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+  chmod 700 /root/get_helm.sh
+  /root/get_helm.sh
+}
+
 render_nginx_config(){
 cat << 'EOF' > "$NGINX_RESOURCES_FILE"
 ---
@@ -53,12 +191,12 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 80
-      nodePort: ${nginx_ingress_controller_http_nodeport}
+      nodePort: ${ingress_controller_http_nodeport}
     - name: https
       port: 443
       protocol: TCP
       targetPort: 443
-      nodePort: ${nginx_ingress_controller_https_nodeport}
+      nodePort: ${ingress_controller_https_nodeport}
   type: NodePort
 ---
 apiVersion: v1
@@ -194,7 +332,11 @@ k3s_install_params+=("--advertise-address $local_ip")
 k3s_install_params+=("--flannel-iface $flannel_iface")
 %{ endif }
 
-%{ if install_nginx_ingress } 
+%{ if install_nginx_ingress }
+k3s_install_params+=("--disable traefik")
+%{ endif }
+
+%{ if install_traefik2 }
 k3s_install_params+=("--disable traefik")
 %{ endif }
 
@@ -252,6 +394,24 @@ if [[ "$first_instance" == "$instance_id" ]]; then
   NGINX_RESOURCES_FILE=/root/nginx-ingress-resources.yaml
   render_nginx_config
   kubectl apply -f $NGINX_RESOURCES_FILE
+fi
+%{ endif }
+
+%{ if install_traefik2 }
+if [[ "$first_instance" == "$instance_id" ]]; then
+  export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+  
+  # Install Helm
+  install_helm
+  
+  # Add traefik helm repo
+  kubectl create ns traefik
+  helm repo add traefik https://helm.traefik.io/traefik
+  helm repo update
+  
+  TRAEFIK_VALUES_FILE=/root/traefik2_values.yaml
+  render_traefil2_config
+  helm install --namespace=traefik -f /root/traefik2_values.yaml traefik traefik/traefik
 fi
 %{ endif }
 
