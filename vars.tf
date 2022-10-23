@@ -28,7 +28,7 @@ variable "os_image_id" {
 
 variable "k3s_version" {
   type    = string
-  default = "latest"
+  default = "v1.24.6+k3s1"
 }
 
 variable "k3s_subnet" {
