@@ -176,7 +176,7 @@ variable "install_certmanager" {
 
 variable "certmanager_release" {
   type    = string
-  default = "v1.9.1"
+  default = "v1.10.0"
 }
 
 variable "certmanager_email_address" {
@@ -191,7 +191,7 @@ variable "install_longhorn" {
 
 variable "longhorn_release" {
   type    = string
-  default = "v1.3.1"
+  default = "v1.3.2"
 }
 
 variable "install_argocd" {
@@ -201,7 +201,7 @@ variable "install_argocd" {
 
 variable "argocd_release" {
   type    = string
-  default = "v2.4.11"
+  default = "v2.4.15"
 }
 
 variable "install_argocd_image_updater" {
