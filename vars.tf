@@ -159,11 +159,6 @@ variable "my_public_ip_cidr" {
   description = "My public ip CIDR"
 }
 
-variable "install_traefik2" {
-  type    = bool
-  default = false
-}
-
 variable "install_nginx_ingress" {
   type    = bool
   default = true
