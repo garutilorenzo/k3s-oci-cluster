@@ -337,6 +337,10 @@ k3s_install_params+=("--flannel-iface $flannel_iface")
 k3s_install_params+=("--disable traefik")
 %{ endif }
 
+%{ if ! disable_ingress }
+k3s_install_params+=("--disable traefik")
+%{ endif }
+
 %{ if expose_kubeapi }
 k3s_install_params+=("--tls-san ${k3s_tls_san_public}")
 %{ endif }
@@ -394,7 +398,7 @@ if [[ "$first_instance" == "$instance_id" ]]; then
 fi
 %{ endif }
 
-%{ if ! install_nginx_ingress }
+%{ if ! disable_ingress }
 if [[ "$first_instance" == "$instance_id" ]]; then
   TRAEFIK_VALUES_FILE=/var/lib/rancher/k3s/server/manifests/traefik-config.yaml
   render_traefil2_config
