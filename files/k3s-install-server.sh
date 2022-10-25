@@ -337,7 +337,7 @@ k3s_install_params+=("--flannel-iface $flannel_iface")
 k3s_install_params+=("--disable traefik")
 %{ endif }
 
-%{ if ! disable_ingress }
+%{ if disable_ingress }
 k3s_install_params+=("--disable traefik")
 %{ endif }
 
