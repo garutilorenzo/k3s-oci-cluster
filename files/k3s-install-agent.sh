@@ -71,7 +71,7 @@ if [[ "$operating_system" == "ubuntu" ]]; then
   install_oci_cli_ubuntu
   %{ endif }
 
-  %{ if ! disable_ingress }
+  %{ if install_traefik2  }
   install_oci_cli_ubuntu
   %{ endif }
   
@@ -96,7 +96,7 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
   install_oci_cli_oracle
   %{ endif }
 
-  %{ if ! disable_ingress }
+  %{ if install_traefik2  }
   install_oci_cli_oracle
   %{ endif }
 
@@ -264,7 +264,7 @@ systemctl restart nginx
 proxy_protocol_stuff
 %{ endif }
 
-%{ if ! disable_ingress }
+%{ if install_traefik2  }
 proxy_protocol_stuff
 %{ endif }
 

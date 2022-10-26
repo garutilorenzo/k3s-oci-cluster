@@ -159,7 +159,7 @@ variable "my_public_ip_cidr" {
   description = "My public ip CIDR"
 }
 
-variable "disable_ingress" {
+variable "install_traefik2" {
   type    = bool
   default = false
 }
