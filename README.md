@@ -204,7 +204,7 @@ In the *example/* directory of this repo you need to create a terraform.tfvars f
 
 ```
 fingerprint      = "<rsa_key_fingerprint>"
-private_key_path = "~/.oci/<your_name>-oracle-cloud_public.pem"
+private_key_path = "~/.oci/<your_name>-oracle-cloud.pem"
 user_ocid        = "<user_ocid>"
 tenancy_ocid     = "<tenency_ocid>"
 compartment_ocid = "<compartment_ocid>"
