@@ -74,6 +74,10 @@ if [[ "$operating_system" == "ubuntu" ]]; then
   %{ if install_traefik2  }
   install_oci_cli_ubuntu
   %{ endif }
+
+  %{ if ! disable_ingress }
+  install_oci_cli_ubuntu
+  %{ endif }
   
   # Fix /var/log/journal dir size
   echo "SystemMaxUse=100M" >> /etc/systemd/journald.conf
@@ -97,6 +101,10 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
   %{ endif }
 
   %{ if install_traefik2  }
+  install_oci_cli_oracle
+  %{ endif }
+
+  %{ if ! disable_ingress }
   install_oci_cli_oracle
   %{ endif }
 
@@ -265,6 +273,10 @@ proxy_protocol_stuff
 %{ endif }
 
 %{ if install_traefik2  }
+proxy_protocol_stuff
+%{ endif }
+
+%{ if ! disable_ingress }
 proxy_protocol_stuff
 %{ endif }
 

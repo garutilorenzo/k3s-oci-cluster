@@ -41,6 +41,22 @@ install_helm() {
   /root/get_helm.sh
 }
 
+install_and_configure_traefik2() {
+  export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+  # Install Helm
+  install_helm
+
+  # Add traefik helm repo
+  kubectl create ns traefik
+  helm repo add traefik https://helm.traefik.io/traefik
+  helm repo update
+
+  TRAEFIK_VALUES_FILE=/root/traefik2_values.yaml
+  render_traefil2_config
+  helm install --namespace=traefik -f $TRAEFIK_VALUES_FILE traefik traefik/traefik
+}
+
 render_traefil2_config() {
 cat << 'EOF' > "$TRAEFIK_VALUES_FILE"
 service:
@@ -332,6 +348,10 @@ k3s_install_params+=("--advertise-address $local_ip")
 k3s_install_params+=("--flannel-iface $flannel_iface")
 %{ endif }
 
+%{ if disable_ingress }
+k3s_install_params+=("--disable traefik")
+%{ endif }
+
 %{ if install_nginx_ingress }
 k3s_install_params+=("--disable traefik")
 %{ endif }
@@ -397,21 +417,16 @@ if [[ "$first_instance" == "$instance_id" ]]; then
 fi
 %{ endif }
 
+
+%{ if ! disable_ingress }
+if [[ "$first_instance" == "$instance_id" ]]; then
+  install_and_configure_traefik2
+fi
+%{ endif }
+
 %{ if install_traefik2 }
 if [[ "$first_instance" == "$instance_id" ]]; then
-  export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-
-  # Install Helm
-  install_helm
-
-  # Add traefik helm repo
-  kubectl create ns traefik
-  helm repo add traefik https://helm.traefik.io/traefik
-  helm repo update
-
-  TRAEFIK_VALUES_FILE=/root/traefik2_values.yaml
-  render_traefil2_config
-  helm install --namespace=traefik -f $TRAEFIK_VALUES_FILE traefik traefik/traefik
+  install_and_configure_traefik2
 fi
 %{ endif }
 

@@ -164,6 +164,11 @@ variable "install_traefik2" {
   default = false
 }
 
+variable "disable_ingress" {
+  type    = bool
+  default = false
+}
+
 variable "install_nginx_ingress" {
   type    = bool
   default = true
