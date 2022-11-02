@@ -250,7 +250,7 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `k3s_server_pool_size`  | `no`  | Number of k3s servers deployed. Default 2  |
 | `k3s_worker_pool_size`  | `no`  | Number of k3s workers deployed. Default 2  |
 | `install_nginx_ingress`  | `no`  | Boolean value, install kubernetes nginx ingress controller instead of Traefik. Default: true. For more information see [Nginx ingress controller](#nginx-ingress-controller) |
-| `install_traefik2`  | `no`  | Boolean value, install Traefik 2 ingress controller instead of the embedded k3s Traefik. Default: false. |
+| `install_traefik2`  | `no`  | Boolean value, install [Traefik 2](https://traefik.io/) ingress controller instead of the [embedded k3s Traefik](https://docs.k3s.io/networking#traefik-ingress-controller). Default: false. |
 | `disable_ingress`  | `no`  | Boolean value, disable all ingress controllers. Default: false |
 | `ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
 | `ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
