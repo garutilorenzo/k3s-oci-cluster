@@ -250,9 +250,10 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `k3s_server_pool_size`  | `no`  | Number of k3s servers deployed. Default 2  |
 | `k3s_worker_pool_size`  | `no`  | Number of k3s workers deployed. Default 2  |
 | `install_nginx_ingress`  | `no`  | Boolean value, install kubernetes nginx ingress controller instead of Traefik. Default: true. For more information see [Nginx ingress controller](#nginx-ingress-controller) |
-nginx_ingress_controller_http_nodeport
-| `nginx_ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
-| `nginx_ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
+| `install_traefik2`  | `no`  | Boolean value, install Traefik 2 ingress controller instead of the embedded k3s Traefik. Default: false. |
+| `disable_ingress`  | `no`  | Boolean value, disable all ingress controllers. Default: false |
+| `ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
+| `ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
 | `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true. To use longhorn set the *k3s_version* < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)  |
 | `longhorn_release`  | `no`  | Longhorn release. Default: v1.2.3  |
 | `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
@@ -384,12 +385,12 @@ spec:
       port: 80
       protocol: TCP
       targetPort: 80
-      nodePort: ${nginx_ingress_controller_http_nodeport} # default to 30080
+      nodePort: ${ingress_controller_http_nodeport} # default to 30080
     - name: https
       port: 443
       protocol: TCP
       targetPort: 443
-      nodePort: ${nginx_ingress_controller_https_nodeport} # default to 30443
+      nodePort: ${ingress_controller_https_nodeport} # default to 30443
   type: NodePort
 ```
 
@@ -421,8 +422,8 @@ metadata:
 **NOTE** to use nginx ingress controller with the proxy protocol enabled, an external nginx instance is used as proxy (since OCI LB doesn't support proxy protocol at the moment). Nginx will be installed on each worker node and the configuation of nginx will:
 
 * listen in proxy protocol mode
-* forward the traffic from port 80 to nginx_ingress_controller_http_nodeport (default to 30080) on any server of the cluster
-* forward the traffic from port 443 to nginx_ingress_controller_https_nodeport (default to 30443) on any server of the cluster
+* forward the traffic from port 80 to ingress_controller_http_nodeport (default to 30080) on any server of the cluster
+* forward the traffic from port 443 to ingress_controller_https_nodeport (default to 30443) on any server of the cluster
 
 This is the final result:
 
