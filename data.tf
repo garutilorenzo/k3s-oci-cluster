@@ -3,7 +3,7 @@ resource "random_password" "k3s_token" {
   special = false
 }
 
-data "template_cloudinit_config" "k3s_server_tpl" {
+data "cloudinit_config" "k3s_server_tpl" {
   gzip          = true
   base64_encode = true
 
@@ -39,7 +39,7 @@ data "template_cloudinit_config" "k3s_server_tpl" {
   }
 }
 
-data "template_cloudinit_config" "k3s_worker_tpl" {
+data "cloudinit_config" "k3s_worker_tpl" {
   gzip          = true
   base64_encode = true
 

@@ -48,7 +48,7 @@ resource "oci_core_instance_configuration" "k3s_server_template" {
 
       metadata = {
         "ssh_authorized_keys" = file(var.PATH_TO_PUBLIC_KEY)
-        "user_data"           = data.template_cloudinit_config.k3s_server_tpl.rendered
+        "user_data"           = data.cloudinit_config.k3s_server_tpl.rendered
       }
 
       shape = var.compute_shape
@@ -114,7 +114,7 @@ resource "oci_core_instance_configuration" "k3s_worker_template" {
 
       metadata = {
         "ssh_authorized_keys" = file(var.PATH_TO_PUBLIC_KEY)
-        "user_data"           = data.template_cloudinit_config.k3s_worker_tpl.rendered
+        "user_data"           = data.cloudinit_config.k3s_worker_tpl.rendered
       }
 
       shape = var.compute_shape
