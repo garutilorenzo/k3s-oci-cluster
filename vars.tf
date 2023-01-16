@@ -178,8 +178,8 @@ variable "ingress_controller" {
   type    = string
   default = "default"
   validation {
-    condition     = contains(["nginx", "traefik2", "istio"], var.ingress_controller)
-    error_message = "Supported ingress controllers are: nginx, traefik2, istio"
+    condition     = contains(["default", "nginx", "traefik2", "istio"], var.ingress_controller)
+    error_message = "Supported ingress controllers are: default, nginx, traefik2, istio"
   }
 }
 

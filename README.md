@@ -251,8 +251,7 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `k3s_server_pool_size`  | `no`  | Number of k3s servers deployed. Default 1  |
 | `k3s_worker_pool_size`  | `no`  | Number of k3s workers deployed. Default 2  |
 | `k3s_extra_worker_node`  | `no`  | Boolean value, default true. Deploy the third worker nodes. The node will be deployed outside the worker instance pools. Using OCI always free account you can't create instance pools with more than two servers. This workaround solve this problem. |
-| `install_nginx_ingress`  | `no`  | Boolean value, install kubernetes nginx ingress controller instead of Traefik. Default: true. For more information see [Nginx ingress controller](#nginx-ingress-controller) |
-| `install_traefik2`  | `no`  | Boolean value, install [Traefik 2](https://traefik.io/) ingress controller instead of the [embedded k3s Traefik](https://docs.k3s.io/networking#traefik-ingress-controller). Default: false. |
+| `ingress_controller`  | `no`  | Define the ingress controller to use. Valid values are: [default](https://docs.k3s.io/networking#traefik-ingress-controller), [nginx](#nginx-ingress-controller), [traefik2](https://traefik.io/) or [istio](https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/) |
 | `disable_ingress`  | `no`  | Boolean value, disable all ingress controllers. Default: false |
 | `ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
 | `ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
