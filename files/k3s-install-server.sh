@@ -262,6 +262,28 @@ spec:
             secretName: istio-ingressgateway-ca-certs
             mountPath: /etc/istio/ingressgateway-ca-certs
 EOF
+
+cat << 'EOF' > "$ENABLE_ISTIO_PROXY_PROTOCOL"
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: proxy-protocol
+  namespace: istio-system
+spec:
+  configPatches:
+  - applyTo: LISTENER
+    patch:
+      operation: MERGE
+      value:
+        listener_filters:
+        - name: envoy.listener.proxy_protocol
+        - name: envoy.listener.tls_inspector
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+EOF
+
+kubectl apply -f $ENABLE_ISTIO_PROXY_PROTOCOL
 }
 
 install_and_configure_istio(){
@@ -269,10 +291,12 @@ install_and_configure_istio(){
   curl -L https://istio.io/downloadIstio | ISTIO_VERSION=${istio_release} sh -
   
   ISTIO_CONFIG_FILE=/root/custom_istio_config.yaml
+  ENABLE_ISTIO_PROXY_PROTOCOL=/root/enable_istio_proxy_protocol.yaml
   render_istio_config
 
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-  /root/istio-${istio_release}/bin/istioctl install -y -f $ISTIO_CONFIG_FILE
+  mv /istio-${istio_release} /opt
+  /opt/istio-${istio_release}/bin/istioctl install -y -f $ISTIO_CONFIG_FILE
 }
 
 install_and_configure_traefik2() {
