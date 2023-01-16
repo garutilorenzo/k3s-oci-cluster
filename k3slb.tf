@@ -48,6 +48,16 @@ resource "oci_network_load_balancer_backend" "k3s_http_backend" {
   target_id                = data.oci_core_instance_pool_instances.k3s_workers_instances.instances[count.index].id
 }
 
+resource "oci_network_load_balancer_backend" "k3s_http_backend_extra_node" {
+  count = var.k3s_extra_worker_node ? 1 : 0
+
+  backend_set_name         = oci_network_load_balancer_backend_set.k3s_http_backend_set.name
+  network_load_balancer_id = oci_network_load_balancer_network_load_balancer.k3s_public_lb.id
+  name                     = format("%s:%s", oci_core_instance.k3s_extra_worker_node[count.index].id, var.http_lb_port)
+  port                     = var.http_lb_port
+  target_id                = oci_core_instance.k3s_extra_worker_node[count.index].id
+}
+
 # HTTPS
 resource "oci_network_load_balancer_listener" "k3s_https_listener" {
   default_backend_set_name = oci_network_load_balancer_backend_set.k3s_https_backend_set.name
@@ -80,6 +90,16 @@ resource "oci_network_load_balancer_backend" "k3s_https_backend" {
   name                     = format("%s:%s", data.oci_core_instance_pool_instances.k3s_workers_instances.instances[count.index].id, var.https_lb_port)
   port                     = var.https_lb_port
   target_id                = data.oci_core_instance_pool_instances.k3s_workers_instances.instances[count.index].id
+}
+
+resource "oci_network_load_balancer_backend" "k3s_https_backend_extra_node" {
+  count = var.k3s_extra_worker_node ? 1 : 0
+
+  backend_set_name         = oci_network_load_balancer_backend_set.k3s_https_backend_set.name
+  network_load_balancer_id = oci_network_load_balancer_network_load_balancer.k3s_public_lb.id
+  name                     = format("%s:%s", oci_core_instance.k3s_extra_worker_node[count.index].id, var.https_lb_port)
+  port                     = var.https_lb_port
+  target_id                = oci_core_instance.k3s_extra_worker_node[count.index].id
 }
 
 ## kube-api

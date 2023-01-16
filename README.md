@@ -248,8 +248,9 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `public_lb_shape`  | `no`  | LB shape for the public LB. Default: flexible. **NOTE** is mandatory to use this kind of shape to provision two always free LB (public and private)  |
 | `http_lb_port`  | `no`  | http port used by the public LB. Default: 80  |
 | `https_lb_port`  | `no`  | http port used by the public LB. Default: 443  |
-| `k3s_server_pool_size`  | `no`  | Number of k3s servers deployed. Default 2  |
+| `k3s_server_pool_size`  | `no`  | Number of k3s servers deployed. Default 1  |
 | `k3s_worker_pool_size`  | `no`  | Number of k3s workers deployed. Default 2  |
+| `k3s_extra_worker_node`  | `no`  | Boolean value, default true. Deploy the third worker nodes. The node will be deployed outside the worker instance pools. Using OCI always free account you can't create instance pools with more than two servers. This workaround solve this problem. |
 | `install_nginx_ingress`  | `no`  | Boolean value, install kubernetes nginx ingress controller instead of Traefik. Default: true. For more information see [Nginx ingress controller](#nginx-ingress-controller) |
 | `install_traefik2`  | `no`  | Boolean value, install [Traefik 2](https://traefik.io/) ingress controller instead of the [embedded k3s Traefik](https://docs.k3s.io/networking#traefik-ingress-controller). Default: false. |
 | `disable_ingress`  | `no`  | Boolean value, disable all ingress controllers. Default: false |
