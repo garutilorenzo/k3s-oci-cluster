@@ -136,12 +136,17 @@ variable "ingress_controller_https_nodeport" {
 
 variable "k3s_server_pool_size" {
   type    = number
-  default = 2
+  default = 1
 }
 
 variable "k3s_worker_pool_size" {
   type    = number
   default = 2
+}
+
+variable "k3s_extra_worker_node" {
+  type    = bool
+  default = true
 }
 
 variable "unique_tag_key" {
