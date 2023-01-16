@@ -282,8 +282,6 @@ spec:
     labels:
       istio: ingressgateway
 EOF
-
-kubectl apply -f $ENABLE_ISTIO_PROXY_PROTOCOL
 }
 
 install_and_configure_istio(){
@@ -297,6 +295,7 @@ install_and_configure_istio(){
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
   mv /istio-${istio_release} /opt
   /opt/istio-${istio_release}/bin/istioctl install -y -f $ISTIO_CONFIG_FILE
+  kubectl apply -f $ENABLE_ISTIO_PROXY_PROTOCOL
 }
 
 install_and_configure_traefik2() {
