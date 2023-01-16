@@ -67,13 +67,6 @@ if [[ "$operating_system" == "ubuntu" ]]; then
   apt-get update
   apt-get install -y software-properties-common jq
   DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
-  %{ if install_nginx_ingress }
-  install_oci_cli_ubuntu
-  %{ endif }
-
-  %{ if install_traefik2  }
-  install_oci_cli_ubuntu
-  %{ endif }
 
   %{ if ! disable_ingress }
   install_oci_cli_ubuntu
@@ -96,13 +89,6 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
 
   dnf -y update
   dnf -y install jq curl
-  %{ if install_nginx_ingress }
-  install_oci_cli_oracle
-  %{ endif }
-
-  %{ if install_traefik2  }
-  install_oci_cli_oracle
-  %{ endif }
 
   %{ if ! disable_ingress }
   install_oci_cli_oracle
@@ -267,14 +253,6 @@ nginx -t
 
 systemctl restart nginx
 }
-
-%{ if install_nginx_ingress }
-proxy_protocol_stuff
-%{ endif }
-
-%{ if install_traefik2  }
-proxy_protocol_stuff
-%{ endif }
 
 %{ if ! disable_ingress }
 proxy_protocol_stuff

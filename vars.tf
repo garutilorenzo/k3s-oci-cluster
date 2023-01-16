@@ -136,7 +136,7 @@ variable "ingress_controller_https_nodeport" {
 
 variable "k3s_server_pool_size" {
   type    = number
-  default = 2
+  default = 1
 }
 
 variable "k3s_worker_pool_size" {
@@ -159,9 +159,9 @@ variable "my_public_ip_cidr" {
   description = "My public ip CIDR"
 }
 
-variable "install_traefik2" {
-  type    = bool
-  default = false
+variable "istio_release" {
+  type    = string
+  default = "1.15.3"
 }
 
 variable "disable_ingress" {
@@ -169,14 +169,18 @@ variable "disable_ingress" {
   default = false
 }
 
-variable "install_nginx_ingress" {
-  type    = bool
-  default = true
+variable "ingress_controller" {
+  type    = string
+  default = "default"
+  validation {
+    condition     = contains(["nginx", "traefik2", "istio"], var.ingress_controller)
+    error_message = "Supported ingress controllers are: nginx, traefik2, istio"
+  }
 }
 
 variable "nginx_ingress_release" {
   type    = string
-  default = "v1.3.1"
+  default = "v1.5.1"
 }
 
 variable "install_certmanager" {
@@ -186,7 +190,7 @@ variable "install_certmanager" {
 
 variable "certmanager_release" {
   type    = string
-  default = "v1.9.1"
+  default = "v1.10.0"
 }
 
 variable "certmanager_email_address" {
@@ -201,7 +205,7 @@ variable "install_longhorn" {
 
 variable "longhorn_release" {
   type    = string
-  default = "v1.3.1"
+  default = "v1.3.2"
 }
 
 variable "install_argocd" {

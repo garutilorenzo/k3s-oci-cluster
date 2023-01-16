@@ -41,6 +41,240 @@ install_helm() {
   /root/get_helm.sh
 }
 
+
+render_istio_config(){
+cat << 'EOF' > "$ISTIO_CONFIG_FILE"
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: istio-system
+spec:
+  hub: docker.io/istio
+  tag: ${istio_release}
+
+  # You may override parts of meshconfig by uncommenting the following lines.
+  meshConfig:
+    defaultConfig:
+      proxyMetadata: {}
+    enablePrometheusMerge: true
+    # Opt-out of global http2 upgrades.
+    # Destination rule is used to opt-in.
+    # h2_upgrade_policy: DO_NOT_UPGRADE
+
+  # Traffic management feature
+  components:
+    base:
+      enabled: true
+    pilot:
+      enabled: true
+
+    # Istio Gateway feature
+    ingressGateways:
+    - name: istio-ingressgateway
+      enabled: true
+      k8s:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 40Mi
+        service:
+          type: NodePort
+          ports:
+            ## You can add custom gateway ports in user values overrides, but it must include those ports since helm replaces.
+            # Note that AWS ELB will by default perform health checks on the first port
+            # on this list. Setting this to the health check port will ensure that health
+            # checks always work. https://github.com/istio/istio/issues/12503
+            - port: 15021
+              targetPort: 15021
+              nodePort: 30521
+              name: status-port
+            - port: 80
+              targetPort: 8080
+              nodePort: ${ingress_controller_http_nodeport}
+              name: http2
+            - port: 443
+              targetPort: 8443
+              nodePort: ${ingress_controller_https_nodeport}
+              name: https
+            - port: 31400
+              targetPort: 31400
+              nodePort: 31400
+              name: tcp
+              # This is the port where sni routing happens
+            - port: 15443
+              targetPort: 15443
+              nodePort: 30543
+              name: tls
+    egressGateways:
+    - name: istio-egressgateway
+      enabled: false
+
+    # Istio CNI feature
+    cni:
+      enabled: false
+    
+    # Remote and config cluster configuration for an external istiod
+    istiodRemote:
+      enabled: false
+
+  # Global values passed through to helm global.yaml.
+  # Please keep this in sync with manifests/charts/global.yaml
+  values:
+    defaultRevision: ""
+    global:
+      istioNamespace: istio-system
+      istiod:
+        enableAnalysis: false
+      logging:
+        level: "default:info"
+      logAsJson: false
+      pilotCertProvider: istiod
+      jwtPolicy: third-party-jwt
+      proxy:
+        image: proxyv2
+        clusterDomain: "cluster.local"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 2000m
+            memory: 1024Mi
+        logLevel: warning
+        componentLogLevel: "misc:error"
+        privileged: false
+        enableCoreDump: false
+        statusPort: 15020
+        readinessInitialDelaySeconds: 1
+        readinessPeriodSeconds: 2
+        readinessFailureThreshold: 30
+        includeIPRanges: "*"
+        excludeIPRanges: ""
+        excludeOutboundPorts: ""
+        excludeInboundPorts: ""
+        autoInject: enabled
+        tracer: "zipkin"
+      proxy_init:
+        image: proxyv2
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 1024Mi
+          requests:
+            cpu: 10m
+            memory: 10Mi
+      # Specify image pull policy if default behavior isn't desired.
+      # Default behavior: latest images will be Always else IfNotPresent.
+      imagePullPolicy: ""
+      operatorManageWebhooks: false
+      tracer:
+        lightstep: {}
+        zipkin: {}
+        datadog: {}
+        stackdriver: {}
+      imagePullSecrets: []
+      oneNamespace: false
+      defaultNodeSelector: {}
+      configValidation: true
+      multiCluster:
+        enabled: false
+        clusterName: ""
+      omitSidecarInjectorConfigMap: false
+      network: ""
+      defaultResources:
+        requests:
+          cpu: 10m
+      defaultPodDisruptionBudget:
+        enabled: true
+      priorityClassName: ""
+      useMCP: false
+      sds:
+        token:
+          aud: istio-ca
+      sts:
+        servicePort: 0
+      meshNetworks: {}
+      mountMtlsCerts: false
+    base:
+      enableCRDTemplates: false
+      validationURL: ""
+    pilot:
+      autoscaleEnabled: true
+      autoscaleMin: 1
+      autoscaleMax: 5
+      replicaCount: 1
+      image: pilot
+      traceSampling: 1.0
+      env: {}
+      cpu:
+        targetAverageUtilization: 80
+      nodeSelector: {}
+      keepaliveMaxServerConnectionAge: 30m
+      enableProtocolSniffingForOutbound: true
+      enableProtocolSniffingForInbound: true
+      deploymentLabels:
+      podLabels: {}
+      configMap: true
+
+    telemetry:
+      enabled: true
+      v2:
+        enabled: true
+        metadataExchange:
+          wasmEnabled: false
+        prometheus:
+          wasmEnabled: false
+          enabled: true
+        stackdriver:
+          enabled: false
+          logging: false
+          monitoring: false
+          topology: false
+          configOverride: {}
+
+    istiodRemote:
+      injectionURL: ""
+      
+    gateways:
+      istio-egressgateway:
+        env: {}
+        autoscaleEnabled: true
+        type: ClusterIP
+        name: istio-egressgateway
+        secretVolumes:
+          - name: egressgateway-certs
+            secretName: istio-egressgateway-certs
+            mountPath: /etc/istio/egressgateway-certs
+          - name: egressgateway-ca-certs
+            secretName: istio-egressgateway-ca-certs
+            mountPath: /etc/istio/egressgateway-ca-certs
+
+      istio-ingressgateway:
+        autoscaleEnabled: true
+        type: LoadBalancer
+        name: istio-ingressgateway
+        env: {}
+        secretVolumes:
+          - name: ingressgateway-certs
+            secretName: istio-ingressgateway-certs
+            mountPath: /etc/istio/ingressgateway-certs
+          - name: ingressgateway-ca-certs
+            secretName: istio-ingressgateway-ca-certs
+            mountPath: /etc/istio/ingressgateway-ca-certs
+EOF
+}
+
+install_and_configure_istio(){
+  echo "Installing Istio..."
+  curl -L https://istio.io/downloadIstio | ISTIO_VERSION=${istio_release} sh -
+  
+  ISTIO_CONFIG_FILE=/root/custom_istio_config.yaml
+  render_istio_config
+
+  export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+  /root/istio-${istio_release}/bin/istioctl install -y -f $ISTIO_CONFIG_FILE
+}
+
 install_and_configure_traefik2() {
   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
@@ -53,11 +287,11 @@ install_and_configure_traefik2() {
   helm repo update
 
   TRAEFIK_VALUES_FILE=/root/traefik2_values.yaml
-  render_traefil2_config
+  render_traefik2_config
   helm install --namespace=traefik -f $TRAEFIK_VALUES_FILE traefik traefik/traefik
 }
 
-render_traefil2_config() {
+render_traefik2_config() {
 cat << 'EOF' > "$TRAEFIK_VALUES_FILE"
 service:
   enabled: true
@@ -237,6 +471,26 @@ metadata:
 EOF
 }
 
+install_and_configure_nginx(){
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${nginx_ingress_release}/deploy/static/provider/baremetal/deploy.yaml
+  NGINX_RESOURCES_FILE=/root/nginx-ingress-resources.yaml
+  render_nginx_config
+  kubectl apply -f $NGINX_RESOURCES_FILE
+}
+
+install_ingress(){
+  INGRESS_CONTROLLER=$1
+  if [[ "$INGRESS_CONTROLLER" == "nginx" ]]; then
+    install_and_configure_nginx
+  elif [[ "$INGRESS_CONTROLLER" == "traefik2" ]]; then
+    install_and_configure_traefik2
+  elif [[ "$INGRESS_CONTROLLER" == "istio" ]]; then
+    install_and_configure_istio
+  else
+    echo "Ingress controller not supported"
+  fi
+}
+
 render_staging_issuer(){
 STAGING_ISSUER_RESOURCE=$1
 cat << 'EOF' > "$STAGING_ISSUER_RESOURCE"
@@ -352,12 +606,10 @@ k3s_install_params+=("--flannel-iface $flannel_iface")
 k3s_install_params+=("--disable traefik")
 %{ endif }
 
-%{ if install_nginx_ingress }
+%{ if ! disable_ingress }
+%{ if ingress_controller != "default" }
 k3s_install_params+=("--disable traefik")
 %{ endif }
-
-%{ if install_traefik2 }
-k3s_install_params+=("--disable traefik")
 %{ endif }
 
 %{ if expose_kubeapi }
@@ -408,26 +660,12 @@ if [[ "$first_instance" == "$instance_id" ]]; then
 fi
 %{ endif }
 
-%{ if install_nginx_ingress }
-if [[ "$first_instance" == "$instance_id" ]]; then
-  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${nginx_ingress_release}/deploy/static/provider/baremetal/deploy.yaml
-  NGINX_RESOURCES_FILE=/root/nginx-ingress-resources.yaml
-  render_nginx_config
-  kubectl apply -f $NGINX_RESOURCES_FILE
-fi
-%{ endif }
-
-
 %{ if ! disable_ingress }
+%{ if ingress_controller != "default" }
 if [[ "$first_instance" == "$instance_id" ]]; then
-  install_and_configure_traefik2
+  install_ingress ${ingress_controller}
 fi
 %{ endif }
-
-%{ if install_traefik2 }
-if [[ "$first_instance" == "$instance_id" ]]; then
-  install_and_configure_traefik2
-fi
 %{ endif }
 
 %{ if install_certmanager }
