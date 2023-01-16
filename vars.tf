@@ -144,6 +144,11 @@ variable "k3s_worker_pool_size" {
   default = 2
 }
 
+variable "k3s_extra_worker_node" {
+  type    = bool
+  default = true
+}
+
 variable "unique_tag_key" {
   type    = string
   default = "k3s-provisioner"
