@@ -256,9 +256,10 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
 | `ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
 | `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true. To use longhorn set the *k3s_version* < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)  |
-| `longhorn_release`  | `no`  | Longhorn release. Default: v1.2.3  |
+| `longhorn_release`  | `no`  | Longhorn release. Default: v1.4.0  |
 | `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
-| `certmanager_release`  | `no`  | Cert manager release. Default: v1.8.2  |
+| `nginx_ingress_release`  | `no`  | Longhorn release. Default: v1.5.1  |
+| `certmanager_release`  | `no`  | Cert manager release. Default: v1.11.0  |
 | `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Defaul: changeme@example.com  |
 | `install_argocd`  | `no`  | Boolean value, install [Argo CD](https://argo-cd.readthedocs.io/en/stable/) "a declarative, GitOps continuous delivery tool for Kubernetes.". Default: true  |
 | `argocd_release`  | `no`  | Argo CD release. Default: v2.4.11  |
