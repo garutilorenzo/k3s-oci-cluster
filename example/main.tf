@@ -34,6 +34,7 @@ module "k3s_cluster" {
   environment               = "staging"
   os_image_id               = "<change_me>"
   certmanager_email_address = "<change_me>"
+  ingress_controller        = "nginx"
   source                    = "../"
 }
 

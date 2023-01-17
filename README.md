@@ -334,7 +334,7 @@ In this setup we use two LB, one internal LB and one public LB (Layer 7). In ord
 
 In this environment the High Availability of the K3s cluster is provided using the Embedded DB. More details [here](https://rancher.com/docs/k3s/latest/en/installation/ha-embedded/)
 
-The default installation of K3s install [Traefik](https://traefik.io/) as ingress the controller. In this environment Traefik is replaced by [Nginx ingress controller](https://kubernetes.github.io/ingress-nginx/). To install Traefik as the ingress controller set the variable *install_nginx_ingress* to *false*.
+The default installation of K3s install [Traefik](https://docs.k3s.io/networking#traefik-ingress-controller) as ingress the controller. In this environment Traefik is replaced by [Nginx ingress controller](https://kubernetes.github.io/ingress-nginx/). To install Traefik as the ingress controller set the variable *ingress_controller* to *default*.
 For more details on Nginx ingress controller see the [Nginx ingress controller](#nginxingress-controller) section.
 
 ## Infrastructure overview
@@ -366,7 +366,7 @@ This setup will automatically install [longhorn](https://longhorn.io/). Longhorn
 
 ### Nginx ingress controller
 
-In this environment [Nginx ingress controller](https://kubernetes.github.io/ingress-nginx/) is used instead of the standard [Traefik](https://traefik.io/) ingress controller.
+In this environment [Nginx ingress controller](https://kubernetes.github.io/ingress-nginx/) is used instead of the standard [Traefik](https://docs.k3s.io/networking#traefik-ingress-controller) ingress controller.
 
 The installation is the [bare metal](https://kubernetes.github.io/ingress-nginx/deploy/#bare-metal-clusters) installation, the ingress controller then is exposed via a NodePort Service.
 
