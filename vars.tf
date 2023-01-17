@@ -164,9 +164,9 @@ variable "my_public_ip_cidr" {
   description = "My public ip CIDR"
 }
 
-variable "install_traefik2" {
-  type    = bool
-  default = false
+variable "istio_release" {
+  type    = string
+  default = "1.16.1"
 }
 
 variable "disable_ingress" {
@@ -174,14 +174,18 @@ variable "disable_ingress" {
   default = false
 }
 
-variable "install_nginx_ingress" {
-  type    = bool
-  default = true
+variable "ingress_controller" {
+  type    = string
+  default = "default"
+  validation {
+    condition     = contains(["default", "nginx", "traefik2", "istio"], var.ingress_controller)
+    error_message = "Supported ingress controllers are: default, nginx, traefik2, istio"
+  }
 }
 
 variable "nginx_ingress_release" {
   type    = string
-  default = "v1.3.1"
+  default = "v1.5.1"
 }
 
 variable "install_certmanager" {
@@ -191,7 +195,7 @@ variable "install_certmanager" {
 
 variable "certmanager_release" {
   type    = string
-  default = "v1.9.1"
+  default = "v1.11.0"
 }
 
 variable "certmanager_email_address" {
@@ -206,7 +210,7 @@ variable "install_longhorn" {
 
 variable "longhorn_release" {
   type    = string
-  default = "v1.3.1"
+  default = "v1.4.0"
 }
 
 variable "install_argocd" {
