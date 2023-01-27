@@ -56,7 +56,8 @@ This module was tested with:
 
 ### Terraform OCI user creation (Optional)
 
-Is always recommended to create a separate user an group to use with Terraform. This user must have less privileges possible (Zero trust policy). This is an example policy that allow *terraform-group* to manage all the resources needed by this module:
+Is always recommended to create a separate user and group in your preferred [domain](https://cloud.oracle.com/identity/domains) to use with Terraform.
+This user must have less privileges possible (Zero trust policy). Below is an example policy that you can [create](https://cloud.oracle.com/identity/policies) allow *terraform-group* to manage all the resources needed by this module:
 
 ```
 Allow group terraform-group to manage virtual-network-family  in compartment id <compartment_ocid>
@@ -71,7 +72,7 @@ Allow group terraform-group to read network-load-balancers  in compartment id <c
 ```
 
 See [how](#oracle-provider-setup) to find the compartment ocid. The user and the group have to be manually created before using this module.
-To create the user go to Identity & Security -> Users, then create the group in Identity & Security -> Groups and associate the newly created user to the group. The last step is to create the policy in Identity & Security -> Policies.
+To create the user go to **Identity & Security -> Users**, then create the group in **Identity & Security -> Groups** and associate the newly created user to the group. The last step is to create the policy in **Identity & Security -> Policies**.
 
 #### Example RSA key generation
 
