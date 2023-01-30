@@ -14,21 +14,33 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
 
 # Table of Contents
 
-* [Important notes](#important-notes)
-* [Requirements](#requirements)
-* [Supported OS](#supported-os)
-* [Example RSA key generation](#example-rsa-key-generation)
-* [Project setup](#project-setup)
-* [Oracle provider setup](#oracle-provider-setup)
-* [Pre flight checklist](#pre-flight-checklist)
-* [Notes about OCI always free resources](#notes-about-oci-always-free-resources)
-* [Notes about K3s](#notes-about-k3s)
-* [Infrastructure overview](#infrastructure-overview)
-* [Cluster resource deployed](#cluster-resource-deployed)
-* [Deploy](#deploy)
-* [Deploy a sample stack](#deploy-a-sample-stack)
-* [Clean up](#clean-up)
-* [Known Bugs](#known-bugs)
+- [OCI K3s cluster](#oci-k3s-cluster)
+- [Table of Contents](#table-of-contents)
+    - [Important notes](#important-notes)
+    - [Requirements](#requirements)
+    - [Supported OS](#supported-os)
+    - [Terraform OCI user creation (Optional)](#terraform-oci-user-creation-optional)
+      - [Example RSA key generation](#example-rsa-key-generation)
+    - [Project setup](#project-setup)
+    - [Oracle provider setup](#oracle-provider-setup)
+    - [Pre flight checklist](#pre-flight-checklist)
+      - [How to find the availability doamin name](#how-to-find-the-availability-doamin-name)
+      - [How to list all the OS images](#how-to-list-all-the-os-images)
+  - [Notes about OCI always free resources](#notes-about-oci-always-free-resources)
+  - [Notes about K3s](#notes-about-k3s)
+  - [Infrastructure overview](#infrastructure-overview)
+  - [Cluster resource deployed](#cluster-resource-deployed)
+    - [Nginx ingress controller](#nginx-ingress-controller)
+    - [Cert-manager](#cert-manager)
+  - [Deploy](#deploy)
+      - [Public LB check](#public-lb-check)
+      - [Longhorn check](#longhorn-check)
+      - [Argocd check](#argocd-check)
+  - [Deploy a sample stack](#deploy-a-sample-stack)
+  - [Clean up](#clean-up)
+  - [Known Bugs](#known-bugs)
+    - [409-Conflict](#409-conflict)
+    - [kubectl exec failure](#kubectl-exec-failure)
 
 **Note** choose a region with enough ARM capacity
 
@@ -69,6 +81,7 @@ Allow group terraform-group to manage network-load-balancers  in compartment id 
 Allow group terraform-group to manage dynamic-groups in compartment id <compartment_ocid>
 Allow group terraform-group to manage policies in compartment id <compartment_ocid>
 Allow group terraform-group to read network-load-balancers  in compartment id <compartment_ocid>
+Allow group terraform-group to manage dynamic-groups in tenancy
 ```
 
 See [how](#oracle-provider-setup) to find the compartment ocid. The user and the group have to be manually created before using this module.
