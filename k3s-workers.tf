@@ -81,7 +81,7 @@ resource "oci_core_instance" "k3s_extra_worker_node" {
   }
 
   metadata = {
-    "ssh_authorized_keys" = file(var.PATH_TO_PUBLIC_KEY)
+    "ssh_authorized_keys" = file(var.public_key_path)
     "user_data"           = data.cloudinit_config.k3s_worker_tpl.rendered
   }
 

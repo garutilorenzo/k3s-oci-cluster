@@ -3,6 +3,7 @@ variable "tenancy_ocid" {}
 variable "user_ocid" {}
 variable "fingerprint" {}
 variable "private_key_path" {}
+variable "public_key_path" {}
 variable "availability_domain" {}
 variable "my_public_ip_cidr" {}
 variable "cluster_name" {}
@@ -25,6 +26,7 @@ module "k3s_cluster" {
   compartment_ocid          = var.compartment_ocid
   my_public_ip_cidr         = var.my_public_ip_cidr
   cluster_name              = var.cluster_name
+  public_key_path           = var.public_key_path
   environment               = "staging"
   os_image_id               = var.os_image_id
   certmanager_email_address = var.certmanager_email_address

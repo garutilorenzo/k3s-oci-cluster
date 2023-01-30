@@ -41,3 +41,5 @@ terraform.rc
 main.tf_ori
 
 ssl/
+
+*.ignore*

@@ -57,7 +57,7 @@ This module was tested with:
 ### Terraform OCI user creation (Optional)
 
 Is always recommended to create a separate user and group in your preferred [domain](https://cloud.oracle.com/identity/domains) to use with Terraform.
-This user must have less privileges possible (Zero trust policy). Below is an example policy that you can [create](https://cloud.oracle.com/identity/policies) allow *terraform-group* to manage all the resources needed by this module:
+This user must have less privileges possible (Zero trust policy). Below is an example policy that you can [create](https://cloud.oracle.com/identity/policies) allow `terraform-group` to manage all the resources needed by this module:
 
 ```
 Allow group terraform-group to manage virtual-network-family  in compartment id <compartment_ocid>
@@ -84,63 +84,67 @@ chmod 600 ~/.oci/<your_name>-oracle-cloud.pem
 openssl rsa -pubout -in ~/.oci/<your_name>-oracle-cloud.pem -out ~/.oci/<your_name>-oracle-cloud_public.pem
 ```
 
-replace *<your_name>* with your name or a string you prefer.
+replace `<your_name>` with your name or a string you prefer.
 
-**NOTE** ~/.oci/<your_name>-oracle-cloud_public.pem this string will be used on the *terraform.tfvars* used by the Oracle provider plugin, so please take note of this string.
+**NOTE**: `~/.oci/<your_name>-oracle-cloud_public.pem` will be used in  `terraform.tfvars` by the Oracle provider plugin, so please take note of this string.
 
 ### Project setup
 
-Clone this repo and go in the *example/* directory:
+Clone this repo and go in the `example/` directory:
 
 ```
 git clone https://github.com/garutilorenzo/k3s-oci-cluster.git
 cd k3s-oci-cluster/example/
 ```
 
-Now you have to edit the *main.tf* file and you have to create the *terraform.tfvars* file. For more detail see [Oracle provider setup](#oracle-provider-setup) and [Pre flight checklist](#pre-flight-checklist).
+Now you have to edit the `main.tf` file and you have to create the `terraform.tfvars` file. For more detail see [Oracle provider setup](#oracle-provider-setup) and [Pre flight checklist](#pre-flight-checklist).
 
 Or if you prefer you can create an new empty directory in your workspace and create this three files:
 
-* terraform.tfvars - More details in [Oracle provider setup](#oracle-provider-setup)
-* main.tf
-* provider.tf
+* `terraform.tfvars` - More details in [Oracle provider setup](#oracle-provider-setup)
+* `main.tf`
+* `provider.tf`
 
-The main.tf file will look like:
+The `main.tf` file will look like:
 
 
 ```
-variable "compartment_ocid" {
-
+variable "compartment_ocid" {}
+variable "tenancy_ocid" {}
+variable "user_ocid" {}
+variable "fingerprint" {}
+variable "private_key_path" {}
+variable "public_key_path" {}
+variable "availability_domain" {}
+variable "my_public_ip_cidr" {}
+variable "cluster_name" {}
+variable "os_image_id" {}
+variable "certmanager_email_address" {}
+variable "k3s_server_pool_size" {
+  default = 1
 }
-
-variable "tenancy_ocid" {
-
+variable "k3s_worker_pool_size" {
+  default = 2
 }
-
-variable "user_ocid" {
-
-}
-
-variable "fingerprint" {
-
-}
-
-variable "private_key_path" {
-
-}
-
-variable "region" {
-  default = "<change_me>"
-}
+variable "region" {}
 
 module "k3s_cluster" {
-  region              = var.region
-  availability_domain = "<change_me>"
-  compartment_ocid    = var.compartment_ocid
-  my_public_ip_cidr   = "<change_me>"
-  cluster_name        = "<change_me>"
-  environment         = "staging"
-  source              = "github.com/garutilorenzo/k3s-oci-cluster"
+  # k3s_version               = "v1.23.8+k3s2" # Fix kubectl exec failure
+  # k3s_version               = "v1.24.4+k3s1" # Kubernetes version compatible with longhorn
+  region                    = var.region
+  availability_domain       = var.availability_domain
+  tenancy_ocid              = var.tenancy_ocid
+  compartment_ocid          = var.compartment_ocid
+  my_public_ip_cidr         = var.my_public_ip_cidr
+  cluster_name              = var.cluster_name
+  public_key_path           = var.public_key_path
+  environment               = "staging"
+  os_image_id               = var.os_image_id
+  certmanager_email_address = var.certmanager_email_address
+  k3s_server_pool_size      = var.k3s_server_pool_size
+  k3s_worker_pool_size      = var.k3s_worker_pool_size
+  ingress_controller        = "nginx"
+  source                    = "../"
 }
 
 output "k3s_servers_ips" {
@@ -158,7 +162,7 @@ output "public_lb_ip" {
 
 For all the possible variables see [Pre flight checklist](#pre-flight-checklist)
 
-The provider.tf will look like:
+The `provider.tf` will look like:
 
 ```
 provider "oci" {
@@ -201,7 +205,7 @@ commands will detect it and remind you to do so if necessary.
 
 ### Oracle provider setup
 
-In the *example/* directory of this repo you need to create a terraform.tfvars file, the file will look like:
+In the `example/` directory of this repo you need to create a `terraform.tfvars` file, the file will look like:
 
 ```
 fingerprint      = "<rsa_key_fingerprint>"
@@ -211,17 +215,17 @@ tenancy_ocid     = "<tenency_ocid>"
 compartment_ocid = "<compartment_ocid>"
 ```
 
-To find your tenency_ocid in the Ocacle Cloud console go to: Governance and Administration > Tenency details, then copy the OCID.
+To find your `tenency_ocid` in the Ocacle Cloud console go to: **Governance and Administration > Tenency details**, then copy the OCID.
 
-To find you user_ocid in the Ocacle Cloud console go to User setting (click on the icon in the top right corner, then click on User settings), click your username and then copy the OCID
+To find you `user_ocid` in the Ocacle Cloud console go to **User setting** (click on the icon in the top right corner, then click on User settings), click your username and then copy the OCID.
 
-The compartment_ocid is the same as tenency_ocid.
+The `compartment_ocid` is the same as `tenency_ocid`.
 
-The fingerprint is the fingerprint of your RSA key, you can find this vale under User setting > API Keys
+The fingerprint is the fingerprint of your RSA key, you can find this vale under **User setting > API Keys**.
 
 ### Pre flight checklist
 
-Once you have created the terraform.tfvars file edit the main.tf file (always in the *example/* directory) and set the following variables:
+Once you have created the terraform.tfvars file edit the `main.tf` file (always in the `example/` directory) and set the following variables:
 
 | Var   | Required | Desc |
 | ------- | ------- | ----------- |
@@ -230,6 +234,8 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `compartment_ocid` | `yes`        | Set the correct compartment ocid. See [how](#oracle-provider-setup) to find the compartment ocid |
 | `cluster_name` | `yes`        | the name of your K3s cluster. Default: k3s-cluster |
 | `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
+| `private_key_path`     | `yes`       | Path to your private ssh key |
+| `public_key_path`     | `yes`       | Path to your public ssh key |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
 | `os_image_id`  | `yes`  | Image id to use. See [how](#how-to-list-all-the-os-images) to list all available OS images |
 | `k3s_version`  | `no`  | K3s version. Default: latest |
@@ -269,7 +275,6 @@ Once you have created the terraform.tfvars file edit the main.tf file (always in
 | `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
 | `unique_tag_value`  | `no`  | Unique value used with  unique_tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster |
 | `expose_kubeapi`  | `no`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
-| `PATH_TO_PUBLIC_KEY`     | `no`       | Path to your public ssh key (Default: "~/.ssh/id_rsa.pub) |
 
 
 #### How to find the availability doamin name
@@ -327,15 +332,15 @@ oci compute image list --compartment-id <compartment_ocid> --operating-system "C
 
 ## Notes about OCI always free resources
 
-In order to get the maximum resources available within the oracle always free tier, the max amount of the k3s servers and k3s workers must be 2. So the max value for *k3s_server_pool_size* and *k3s_worker_pool_size* **is** 2.
+In order to get the maximum resources available within the oracle always free tier, the max amount of the k3s servers and k3s workers must be 2. So the **max value** for `k3s_server_pool_size` and `k3s_worker_pool_size` is `2`.
 
-In this setup we use two LB, one internal LB and one public LB (Layer 7). In order to use two LB using the always free resources, one lb must be a [network load balancer](https://docs.oracle.com/en-us/iaas/Content/NetworkLoadBalancer/introducton.htm#Overview) an the other must be a [load balancer](https://docs.oracle.com/en-us/iaas/Content/Balance/Concepts/balanceoverview.htm). The public LB **must** use the *flexible* shape (*public_lb_shape* variable).
+In this setup we use two LB, one internal LB and one public LB (Layer 7). In order to use two LB using the always free resources, one lb must be a [network load balancer](https://docs.oracle.com/en-us/iaas/Content/NetworkLoadBalancer/introducton.htm#Overview) an the other must be a [load balancer](https://docs.oracle.com/en-us/iaas/Content/Balance/Concepts/balanceoverview.htm). The public LB **must** use the `flexible` shape (`public_lb_shape` variable).
 
 ## Notes about K3s
 
 In this environment the High Availability of the K3s cluster is provided using the Embedded DB. More details [here](https://rancher.com/docs/k3s/latest/en/installation/ha-embedded/)
 
-The default installation of K3s install [Traefik](https://docs.k3s.io/networking#traefik-ingress-controller) as ingress the controller. In this environment Traefik is replaced by [Nginx ingress controller](https://kubernetes.github.io/ingress-nginx/). To install Traefik as the ingress controller set the variable *ingress_controller* to *default*.
+The default installation of K3s install [Traefik](https://docs.k3s.io/networking#traefik-ingress-controller) as ingress the controller. In this environment Traefik is replaced by [Nginx ingress controller](https://kubernetes.github.io/ingress-nginx/). To install Traefik as the ingress controller set the variable `ingress_controller` to `default`.
 For more details on Nginx ingress controller see the [Nginx ingress controller](#nginxingress-controller) section.
 
 ## Infrastructure overview
@@ -343,8 +348,8 @@ For more details on Nginx ingress controller see the [Nginx ingress controller](
 The final infrastructure will be made by:
 
 * two instance pool:
-  * one instance pool for the server nodes named "k3s-servers"
-  * one instance pool for the worker nodes named "k3s-workers"
+  * one instance pool for the server nodes named `k3s-servers`
+  * one instance pool for the worker nodes named `k3s-workers`
 * one internal load balancer that will route traffic to K3s servers
 * one external load balancer that will route traffic to K3s workers
 
@@ -361,9 +366,9 @@ The other resources created by terraform are:
 
 ## Cluster resource deployed
 
-This setup will automatically install [longhorn](https://longhorn.io/). Longhorn is a *Cloud native distributed block storage for Kubernetes*. To disable the longhorn deployment set *install_longhorn* variable to *false*
+This setup will automatically install [longhorn](https://longhorn.io/). Longhorn is a *Cloud native distributed block storage for Kubernetes*. To disable the longhorn deployment set `install_longhorn` variable to `false`.
 
-**NOTE** to use longhorn set the *k3s_version* < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)
+**NOTE** to use longhorn set the `k3s_version` < `v1.25.x` [Ref.](https://github.com/longhorn/longhorn/issues/4003)
 
 ### Nginx ingress controller
 
@@ -425,8 +430,8 @@ metadata:
 **NOTE** to use nginx ingress controller with the proxy protocol enabled, an external nginx instance is used as proxy (since OCI LB doesn't support proxy protocol at the moment). Nginx will be installed on each worker node and the configuation of nginx will:
 
 * listen in proxy protocol mode
-* forward the traffic from port 80 to ingress_controller_http_nodeport (default to 30080) on any server of the cluster
-* forward the traffic from port 443 to ingress_controller_https_nodeport (default to 30443) on any server of the cluster
+* forward the traffic from port `80` to `ingress_controller_http_nodeport` (default to `30080`) on any server of the cluster
+* forward the traffic from port `443` to `ingress_controller_https_nodeport` (default to `30443`) on any server of the cluster
 
 This is the final result:
 
@@ -591,7 +596,7 @@ curl -v http://<PUBLIC_LB_IP>
 * Connection #0 to host PUBLIC_LB_IP left intact
 ```
 
-*404* is a correct response since the cluster is empty. We can test also the https listener/backends:
+`404` is a correct response since the cluster is empty. We can test also the https listener/backends:
 
 ```
 curl -k -v https://<PUBLIC_LB_IP>
@@ -744,14 +749,14 @@ kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster
 kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/wordpress/all-resources.yml
 ```
 
-**NOTE** The Wordpress installation is **secured**. To allow external traffic to /wp-admin, /xmlrpc.php and wp-login.php you have to edit the  [deployments/nginx/all-resources.yml](https://github.com/garutilorenzo/k3s-oci-cluster/blob/master/deployments/nginx/all-resources.yml) and change this line:
+**NOTE** The Wordpress installation is **secured**. To allow external traffic to `/wp-admin`, `/xmlrpc.php` and `wp-login.php` you have to edit the  [deployments/nginx/all-resources.yml](https://github.com/garutilorenzo/k3s-oci-cluster/blob/master/deployments/nginx/all-resources.yml) and change this line:
 
 ```yaml
 - name: SECURE_SUBNET
   value: 8.8.8.8/32 # change-me
 ```
 
-whit your public ip address CIDR.
+with your public ip address CIDR.
 
 ```
 curl -o nginx-all-resources.yml https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/nginx/all-resources.yml
@@ -811,7 +816,7 @@ Error: 409-Conflict, Invalid State Transition of NLB lifeCycle state from Updati
 │ API Reference: https://docs.oracle.com/iaas/api/#/en/networkloadbalancer/20200501/Listener/DeleteListener 
 ```
 
-re-run *terraform destroy*
+re-run `terraform destroy`
 
 ### kubectl exec failure
 
