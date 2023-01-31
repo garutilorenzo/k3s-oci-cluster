@@ -247,10 +247,10 @@ Once you have created the terraform.tfvars file edit the `main.tf` file (always 
 | `compartment_ocid` | `yes`        | Set the correct compartment ocid. See [how](#oracle-provider-setup) to find the compartment ocid |
 | `cluster_name` | `yes`        | the name of your K3s cluster. Default: k3s-cluster |
 | `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
-| `private_key_path`     | `yes`       | Path to your private ssh key |
-| `public_key_path`     | `yes`       | Path to your public ssh key |
+| `private_key_path`     | `yes`       | Path to your private **OCI RSA key** |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
 | `os_image_id`  | `yes`  | Image id to use. See [how](#how-to-list-all-the-os-images) to list all available OS images |
+| `public_key_path`     | `no`       | Path to your public **workstation SSH key** |
 | `k3s_version`  | `no`  | K3s version. Default: latest |
 | `k3s_subnet`  | `no`  | Subnet where K3s will be exposed. Rquired if the subnet is different from the default gw subnet (Eg. 192.168.1.0/24). Default: default_route_table |
 | `compute_shape`  | `no`  | Compute shape to use. Default VM.Standard.A1.Flex. **NOTE** Is mandatory to use this compute shape for provision 4 always free VMs |
