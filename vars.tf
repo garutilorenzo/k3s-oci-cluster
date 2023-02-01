@@ -44,7 +44,7 @@ variable "fault_domains" {
 variable "public_key_path" {
   type        = string
   default     = "~/.ssh/id_rsa.pub"
-  description = "Path to your public key"
+  description = "Path to your public workstation SSH key"
 }
 
 variable "compute_shape" {
