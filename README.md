@@ -16,16 +16,16 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
 
 - [OCI K3s cluster](#oci-k3s-cluster)
 - [Table of Contents](#table-of-contents)
-    - [Important notes](#important-notes)
-    - [Requirements](#requirements)
-    - [Supported OS](#supported-os)
-    - [Terraform OCI user creation (Optional)](#terraform-oci-user-creation-optional)
-      - [Example RSA key generation](#example-rsa-key-generation)
-    - [Project setup](#project-setup)
-    - [Oracle provider setup](#oracle-provider-setup)
-    - [Pre flight checklist](#pre-flight-checklist)
-      - [How to find the availability doamin name](#how-to-find-the-availability-doamin-name)
-      - [How to list all the OS images](#how-to-list-all-the-os-images)
+  - [Important notes](#important-notes)
+  - [Requirements](#requirements)
+  - [Supported OS](#supported-os)
+  - [Terraform OCI user creation (Optional)](#terraform-oci-user-creation-optional)
+    - [Example RSA key generation](#example-rsa-key-generation)
+  - [Project setup](#project-setup)
+  - [Oracle provider setup](#oracle-provider-setup)
+  - [Pre flight checklist](#pre-flight-checklist)
+    - [How to find the availability domain name](#how-to-find-the-availability-domain-name)
+    - [How to list all the OS images](#how-to-list-all-the-os-images)
   - [Notes about OCI always free resources](#notes-about-oci-always-free-resources)
   - [Notes about K3s](#notes-about-k3s)
   - [Infrastructure overview](#infrastructure-overview)
@@ -33,9 +33,9 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
     - [Nginx ingress controller](#nginx-ingress-controller)
     - [Cert-manager](#cert-manager)
   - [Deploy](#deploy)
-      - [Public LB check](#public-lb-check)
-      - [Longhorn check](#longhorn-check)
-      - [Argocd check](#argocd-check)
+    - [Public LB check](#public-lb-check)
+    - [Longhorn check](#longhorn-check)
+    - [Argocd check](#argocd-check)
   - [Deploy a sample stack](#deploy-a-sample-stack)
   - [Clean up](#clean-up)
   - [Known Bugs](#known-bugs)
@@ -46,25 +46,25 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
 
 ### Important notes
 
-* This is repo shows only how to use terraform with the Oracle Cloud infrastructure and use only the **always free** resources. This examples are **not** for a production environment.
-* At the end of your trial period (30 days). All the paid resources deployed will be stopped/terminated
-* At the end of your trial period (30 days), if you have a running compute instance it will be stopped/hibernated
+- This is repo shows only how to use terraform with the Oracle Cloud infrastructure and use only the **always free** resources. This examples are **not** for a production environment.
+- At the end of your trial period (30 days). All the paid resources deployed will be stopped/terminated
+- At the end of your trial period (30 days), if you have a running compute instance it will be stopped/hibernated
 
 ### Requirements
 
 To use this repo you will need:
 
-* an Oracle Cloud account. You can register [here](https://cloud.oracle.com)
+- an Oracle Cloud account. You can register [here](https://cloud.oracle.com)
 
-Once you get the account, follow the *Before you begin* and *1. Prepare* step in [this](https://docs.oracle.com/en-us/iaas/developer-tutorials/tutorials/tf-provider/01-summary.htm) document.
+Once you get the account, follow the _Before you begin_ and _1. Prepare_ step in [this](https://docs.oracle.com/en-us/iaas/developer-tutorials/tutorials/tf-provider/01-summary.htm) document.
 
 ### Supported OS
 
 This module was tested with:
 
-* Ubuntu 20.04, 22.04 (ubuntu remote user)
-* Ubuntu 20.04, 22.04 Minimal (ubuntu remote user)
-* Oracle Linux 8, 9 (opc remote user)
+- Ubuntu 20.04, 22.04 (ubuntu remote user)
+- Ubuntu 20.04, 22.04 Minimal (ubuntu remote user)
+- Oracle Linux 8, 9 (opc remote user)
 
 ### Terraform OCI user creation (Optional)
 
@@ -99,7 +99,7 @@ openssl rsa -pubout -in ~/.oci/<your_name>-oracle-cloud.pem -out ~/.oci/<your_na
 
 replace `<your_name>` with your name or a string you prefer.
 
-**NOTE**: `~/.oci/<your_name>-oracle-cloud_public.pem` will be used in  `terraform.tfvars` by the Oracle provider plugin, so please take note of this string.
+**NOTE**: `~/.oci/<your_name>-oracle-cloud_public.pem` will be used in `terraform.tfvars` by the Oracle provider plugin, so please take note of this string.
 
 ### Project setup
 
@@ -114,12 +114,11 @@ Now you have to edit the `main.tf` file and you have to create the `terraform.tf
 
 Or if you prefer you can create an new empty directory in your workspace and create this three files:
 
-* `terraform.tfvars` - More details in [Oracle provider setup](#oracle-provider-setup)
-* `main.tf`
-* `provider.tf`
+- `terraform.tfvars` - More details in [Oracle provider setup](#oracle-provider-setup)
+- `main.tf`
+- `provider.tf`
 
 The `main.tf` file will look like:
-
 
 ```
 variable "compartment_ocid" {}
@@ -240,57 +239,62 @@ The fingerprint is the fingerprint of your RSA key, you can find this vale under
 
 Once you have created the terraform.tfvars file edit the `main.tf` file (always in the `example/` directory) and set the following variables:
 
-| Var   | Required | Desc |
-| ------- | ------- | ----------- |
-| `region`       | `yes`       | set the correct OCI region based on your needs  |
-| `availability_domain` | `yes`        | Set the correct availability domain. See [how](#how-to-find-the-availability-doamin-name) to find the availability domain|
-| `compartment_ocid` | `yes`        | Set the correct compartment ocid. See [how](#oracle-provider-setup) to find the compartment ocid |
-| `cluster_name` | `yes`        | the name of your K3s cluster. Default: k3s-cluster |
-| `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
-| `private_key_path`     | `yes`       | Path to your private **OCI RSA key** |
-| `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
-| `os_image_id`  | `yes`  | Image id to use. See [how](#how-to-list-all-the-os-images) to list all available OS images |
-| `public_key_path`     | `no`       | Path to your public **workstation SSH key** |
-| `k3s_version`  | `no`  | K3s version. Default: latest |
-| `k3s_subnet`  | `no`  | Subnet where K3s will be exposed. Rquired if the subnet is different from the default gw subnet (Eg. 192.168.1.0/24). Default: default_route_table |
-| `compute_shape`  | `no`  | Compute shape to use. Default VM.Standard.A1.Flex. **NOTE** Is mandatory to use this compute shape for provision 4 always free VMs |
-| `oci_core_vcn_dns_label`  | `no`  | VCN DNS label. Default: defaultvcn |
-| `oci_core_subnet_dns_label10`  | `no`  | First subnet DNS label. Default: defaultsubnet10 |
-| `oci_core_subnet_dns_label11`  | `no`  | Second subnet DNS label. Default: defaultsubnet11 |
-| `oci_core_vcn_cidr`  | `no`  | VCN CIDR. Default: oci_core_vcn_cidr |
-| `oci_core_subnet_cidr10`  | `no`  | First subnet CIDR. Default: 10.0.0.0/24 |
-| `oci_core_subnet_cidr11`  | `no`  | Second subnet CIDR. Default: 10.0.1.0/24 |
-| `oci_identity_dynamic_group_name`  | `no`  | Dynamic group name. This dynamic group will contains all the instances of this specific compartment. Default: Compute_Dynamic_Group |
-| `oci_identity_policy_name`  | `no`  | Policy name. This policy will allow dynamic group 'oci_identity_dynamic_group_name' to read OCI api without auth. Default: Compute_To_Oci_Api_Policy |
-| `k3s_load_balancer_name`  | `no`  | Internal LB name. Default: k3s internal load balancer  |
-| `public_load_balancer_name`  | `no`  | Public LB name. Default: K3s public LB  |
-| `kube_api_port`  | `no`  | Kube api default port Default: 6443  |
-| `public_lb_shape`  | `no`  | LB shape for the public LB. Default: flexible. **NOTE** is mandatory to use this kind of shape to provision two always free LB (public and private)  |
-| `http_lb_port`  | `no`  | http port used by the public LB. Default: 80  |
-| `https_lb_port`  | `no`  | http port used by the public LB. Default: 443  |
-| `k3s_server_pool_size`  | `no`  | Number of k3s servers deployed. Default 1  |
-| `k3s_worker_pool_size`  | `no`  | Number of k3s workers deployed. Default 2  |
-| `k3s_extra_worker_node`  | `no`  | Boolean value, default true. Deploy the third worker nodes. The node will be deployed outside the worker instance pools. Using OCI always free account you can't create instance pools with more than two servers. This workaround solve this problem. |
-| `ingress_controller`  | `no`  | Define the ingress controller to use. Valid values are: [default](https://docs.k3s.io/networking#traefik-ingress-controller), [nginx](#nginx-ingress-controller), [traefik2](https://traefik.io/) or [istio](https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/) |
-| `disable_ingress`  | `no`  | Boolean value, disable all ingress controllers. Default: false |
-| `ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
-| `ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
-| `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true. To use longhorn set the *k3s_version* < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)  |
-| `longhorn_release`  | `no`  | Longhorn release. Default: v1.4.0  |
-| `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
-| `nginx_ingress_release`  | `no`  | Longhorn release. Default: v1.5.1  |
-| `certmanager_release`  | `no`  | Cert manager release. Default: v1.11.0  |
-| `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Defaul: changeme@example.com  |
-| `install_argocd`  | `no`  | Boolean value, install [Argo CD](https://argo-cd.readthedocs.io/en/stable/) "a declarative, GitOps continuous delivery tool for Kubernetes.". Default: true  |
-| `argocd_release`  | `no`  | Argo CD release. Default: v2.4.11  |
-| `install_argocd_image_updater`  | `no`  | Boolean value, install [Argo CD Image Updater](https://argocd-image-updater.readthedocs.io/en/stable/) "A tool to automatically update the container images of Kubernetes workloads that are managed by Argo CD.". Default: true  |
-| `argocd_image_updater_release`  | `no`  | Argo CD release Image Updater. Default: v0.12.0  |
-| `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
-| `unique_tag_value`  | `no`  | Unique value used with  unique_tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster |
-| `expose_kubeapi`  | `no`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
+| Var                                 | Required | Desc                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `region`                            | `yes`    | set the correct OCI region based on your needs                                                                                                                                                                                                                                                                                                                    |
+| `availability_domain`               | `yes`    | Set the correct availability domain. See [how](#how-to-find-the-availability-domain-name) to find the availability domain                                                                                                                                                                                                                                         |
+| `compartment_ocid`                  | `yes`    | Set the correct compartment ocid. See [how](#oracle-provider-setup) to find the compartment ocid                                                                                                                                                                                                                                                                  |
+| `cluster_name`                      | `yes`    | the name of your K3s cluster. Default: k3s-cluster                                                                                                                                                                                                                                                                                                                |
+| `my_public_ip_cidr`                 | `yes`    | your public ip in cidr format (Example: 195.102.xxx.xxx/32)                                                                                                                                                                                                                                                                                                       |
+| `private_key_path`                  | `yes`    | Path to your private **OCI RSA key**                                                                                                                                                                                                                                                                                                                              |
+| `environment`                       | `yes`    | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources                                                                                                                                                                                                                                                       |
+| `os_image_id`                       | `yes`    | Image id to use. See [how](#how-to-list-all-the-os-images) to list all available OS images                                                                                                                                                                                                                                                                        |
+| `public_key_path`                   | `no`     | Path to your public **workstation SSH key**                                                                                                                                                                                                                                                                                                                       |
+| `k3s_version`                       | `no`     | K3s version. Default: latest                                                                                                                                                                                                                                                                                                                                      |
+| `k3s_subnet`                        | `no`     | Subnet where K3s will be exposed. Rquired if the subnet is different from the default gw subnet (Eg. 192.168.1.0/24). Default: default_route_table                                                                                                                                                                                                                |
+| `compute_shape`                     | `no`     | Compute shape to use. Default VM.Standard.A1.Flex. **NOTE** Is mandatory to use this compute shape for provision 4 always free VMs                                                                                                                                                                                                                                |
+| `oci_core_vcn_dns_label`            | `no`     | VCN DNS label. Default: defaultvcn                                                                                                                                                                                                                                                                                                                                |
+| `oci_core_subnet_dns_label10`       | `no`     | First subnet DNS label. Default: defaultsubnet10                                                                                                                                                                                                                                                                                                                  |
+| `oci_core_subnet_dns_label11`       | `no`     | Second subnet DNS label. Default: defaultsubnet11                                                                                                                                                                                                                                                                                                                 |
+| `oci_core_vcn_cidr`                 | `no`     | VCN CIDR. Default: oci_core_vcn_cidr                                                                                                                                                                                                                                                                                                                              |
+| `oci_core_subnet_cidr10`            | `no`     | First subnet CIDR. Default: 10.0.0.0/24                                                                                                                                                                                                                                                                                                                           |
+| `oci_core_subnet_cidr11`            | `no`     | Second subnet CIDR. Default: 10.0.1.0/24                                                                                                                                                                                                                                                                                                                          |
+| `oci_identity_dynamic_group_name`   | `no`     | Dynamic group name. This dynamic group will contains all the instances of this specific compartment. Default: Compute_Dynamic_Group                                                                                                                                                                                                                               |
+| `oci_identity_policy_name`          | `no`     | Policy name. This policy will allow dynamic group 'oci_identity_dynamic_group_name' to read OCI api without auth. Default: Compute_To_Oci_Api_Policy                                                                                                                                                                                                              |
+| `k3s_load_balancer_name`            | `no`     | Internal LB name. Default: k3s internal load balancer                                                                                                                                                                                                                                                                                                             |
+| `public_load_balancer_name`         | `no`     | Public LB name. Default: K3s public LB                                                                                                                                                                                                                                                                                                                            |
+| `kube_api_port`                     | `no`     | Kube api default port Default: 6443                                                                                                                                                                                                                                                                                                                               |
+| `public_lb_shape`                   | `no`     | LB shape for the public LB. Default: flexible. **NOTE** is mandatory to use this kind of shape to provision two always free LB (public and private)                                                                                                                                                                                                               |
+| `http_lb_port`                      | `no`     | http port used by the public LB. Default: 80                                                                                                                                                                                                                                                                                                                      |
+| `https_lb_port`                     | `no`     | http port used by the public LB. Default: 443                                                                                                                                                                                                                                                                                                                     |
+| `k3s_server_pool_size`              | `no`     | Number of k3s servers deployed. Default 1                                                                                                                                                                                                                                                                                                                         |
+| `k3s_worker_pool_size`              | `no`     | Number of k3s workers deployed. Default 2                                                                                                                                                                                                                                                                                                                         |
+| `k3s_extra_worker_node`             | `no`     | Boolean value, default true. Deploy the third worker nodes. The node will be deployed outside the worker instance pools. Using OCI always free account you can't create instance pools with more than two servers. This workaround solve this problem.                                                                                                            |
+| `ingress_controller`                | `no`     | Define the ingress controller to use. Valid values are: [default](https://docs.k3s.io/networking#traefik-ingress-controller), [nginx](#nginx-ingress-controller), [traefik2](https://traefik.io/) or [istio](https://istio.io/latest/docs/tasks/traffic-management/ingress/kubernetes-ingress/)                                                                   |
+| `disable_ingress`                   | `no`     | Boolean value, disable all ingress controllers. Default: false                                                                                                                                                                                                                                                                                                    |
+| `ingress_controller_http_nodeport`  | `no`     | NodePort where nginx ingress will listen for http traffic. Default 30080                                                                                                                                                                                                                                                                                          |
+| `ingress_controller_https_nodeport` | `no`     | NodePort where nginx ingress will listen for https traffic. Default 30443                                                                                                                                                                                                                                                                                         |
+| `install_longhorn`                  | `no`     | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true. To use longhorn set the _k3s_version_ < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)                                                                                                                                                  |
+| `longhorn_release`                  | `no`     | Longhorn release. Default: v1.4.0                                                                                                                                                                                                                                                                                                                                 |
+| `install_certmanager`               | `no`     | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true                                                                                                                                                                                                                                              |
+| `nginx_ingress_release`             | `no`     | Longhorn release. Default: v1.5.1                                                                                                                                                                                                                                                                                                                                 |
+| `certmanager_release`               | `no`     | Cert manager release. Default: v1.11.0                                                                                                                                                                                                                                                                                                                            |
+| `certmanager_email_address`         | `no`     | Email address used for signing https certificates. Defaul: changeme@example.com                                                                                                                                                                                                                                                                                   |
+| `install_argocd`                    | `no`     | Boolean value, install [Argo CD](https://argo-cd.readthedocs.io/en/stable/) "a declarative, GitOps continuous delivery tool for Kubernetes.". Default: true                                                                                                                                                                                                       |
+| `argocd_release`                    | `no`     | Argo CD release. Default: v2.4.11                                                                                                                                                                                                                                                                                                                                 |
+| `install_argocd_image_updater`      | `no`     | Boolean value, install [Argo CD Image Updater](https://argocd-image-updater.readthedocs.io/en/stable/) "A tool to automatically update the container images of Kubernetes workloads that are managed by Argo CD.". Default: true                                                                                                                                  |
+| `argocd_image_updater_release`      | `no`     | Argo CD release Image Updater. Default: v0.12.                                                                                                                                                                                                                                                                                                                    |
+| `kubevela_release`                  | `no`     | Kubevela release. Default: 1.7.5                                                                                                                                                                                                                                                                                                                                  |
+| `install_kubevela`                  | `no`     | Boolean value, install [KubeVella](https://kubevela.io/) "Make shipping applications more enjoyable.". Default: false                                                                                                                                                                                                                                             |
+| `crossplane_release`                | `no`     | Crossplane release. Default: 1.9.2                                                                                                                                                                                                                                                                                                                                |
+| `install_crossplane`                | `no`     | Boolean value, install [Crossplane](https://www.crossplane.io/) "Build control planes without needing to write code. Crossplane has a highly extensible backend that enables you to orchestrate applications and infrastructure no matter where they run, and a highly configurable frontend that lets you define the declarative API it offers.". Default: false |
+| `unique_tag_key`                    | `no`     | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner                                                                                                                                                                                                                                                                             |
+| `unique_tag_value`                  | `no`     | Unique value used with unique\*tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster                                                                                                                                                                                                                                                                 |
+| `expose_kubeapi`                    | `no`     | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from \_my_public_ip_cidr\* for security reasons.                                                                                                                                                                                                           |
+| `kubeconfig_location`               | `no`     | String value, default ~/.kube/config. Kubeconfig default location.                                                                                                                                                                                                                                                                                                |
+| `load_cluster_kubeconfig`           | `no`     | Boolean value, Enable to access cluster locally - overwriting var.kubeconfig_location content!!!!                                                                                                                                                                                                                                                                 |
 
-
-#### How to find the availability doamin name
+#### How to find the availability domain name
 
 To find the list of the availability domains run this command on che Cloud Shell:
 
@@ -360,26 +364,26 @@ For more details on Nginx ingress controller see the [Nginx ingress controller](
 
 The final infrastructure will be made by:
 
-* two instance pool:
-  * one instance pool for the server nodes named `k3s-servers`
-  * one instance pool for the worker nodes named `k3s-workers`
-* one internal load balancer that will route traffic to K3s servers
-* one external load balancer that will route traffic to K3s workers
+- two instance pool:
+  - one instance pool for the server nodes named `k3s-servers`
+  - one instance pool for the worker nodes named `k3s-workers`
+- one internal load balancer that will route traffic to K3s servers
+- one external load balancer that will route traffic to K3s workers
 
 The other resources created by terraform are:
 
-* two instance configurations (one for the servers and one for the workers) used by the instance pools
-* one vcn
-* two public subnets
-* two security list
-* one dynamic group
-* one identity policy
+- two instance configurations (one for the servers and one for the workers) used by the instance pools
+- one vcn
+- two public subnets
+- two security list
+- one dynamic group
+- one identity policy
 
 ![k3s infra](https://garutilorenzo.github.io/images/k3s-oci-always-free.drawio.png?)
 
 ## Cluster resource deployed
 
-This setup will automatically install [longhorn](https://longhorn.io/). Longhorn is a *Cloud native distributed block storage for Kubernetes*. To disable the longhorn deployment set `install_longhorn` variable to `false`.
+This setup will automatically install [longhorn](https://longhorn.io/). Longhorn is a _Cloud native distributed block storage for Kubernetes_. To disable the longhorn deployment set `install_longhorn` variable to `false`.
 
 **NOTE** to use longhorn set the `k3s_version` < `v1.25.x` [Ref.](https://github.com/longhorn/longhorn/issues/4003)
 
@@ -442,9 +446,9 @@ metadata:
 
 **NOTE** to use nginx ingress controller with the proxy protocol enabled, an external nginx instance is used as proxy (since OCI LB doesn't support proxy protocol at the moment). Nginx will be installed on each worker node and the configuation of nginx will:
 
-* listen in proxy protocol mode
-* forward the traffic from port `80` to `ingress_controller_http_nodeport` (default to `30080`) on any server of the cluster
-* forward the traffic from port `443` to `ingress_controller_https_nodeport` (default to `30443`) on any server of the cluster
+- listen in proxy protocol mode
+- forward the traffic from port `80` to `ingress_controller_http_nodeport` (default to `30080`) on any server of the cluster
+- forward the traffic from port `443` to `ingress_controller_https_nodeport` (default to `30443`) on any server of the cluster
 
 This is the final result:
 
@@ -591,14 +595,14 @@ curl -v http://<PUBLIC_LB_IP>
 > Host: PUBLIC_LB_IP
 > User-Agent: curl/7.68.0
 > Accept: */*
-> 
+>
 * Mark bundle as not supporting multiuse
 < HTTP/1.1 404 Not Found
 < Date: Fri, 25 Feb 2022 14:03:09 GMT
 < Content-Type: text/html
 < Content-Length: 146
 < Connection: keep-alive
-< 
+<
 <html>
 <head><title>404 Not Found</title></head>
 <body>
@@ -643,14 +647,14 @@ curl -k -v https://<PUBLIC_LB_IP>
 > Host: PUBLIC_LB_IP
 > User-Agent: curl/7.68.0
 > Accept: */*
-> 
+>
 * Mark bundle as not supporting multiuse
 < HTTP/1.1 404 Not Found
 < Date: Fri, 25 Feb 2022 13:48:19 GMT
 < Content-Type: text/html
 < Content-Length: 146
 < Connection: keep-alive
-< 
+<
 <html>
 <head><title>404 Not Found</title></head>
 <body>
@@ -672,7 +676,7 @@ default           Active   9m40s
 kube-node-lease   Active   9m39s
 kube-public       Active   9m39s
 kube-system       Active   9m40s
-longhorn-system   Active   8m52s   <- longhorn namespace 
+longhorn-system   Active   8m52s   <- longhorn namespace
 
 
 root@inst-hmgnl-k3s-servers:~# kubectl get pods -n longhorn-system
@@ -716,6 +720,7 @@ longhorn-ui-9fdb94f9-6shsr                  1/1     Running   0               8m
 #### Argocd check
 
 You can verify that all pods are running:
+
 ```
 root@inst-hmgnl-k3s-servers:~# kubectl get pods -n argocd
 NAME                                                READY   STATUS    RESTARTS   AGE
@@ -728,8 +733,8 @@ argocd-repo-server-5576f8d84b-sgbbt                 1/1     Running   0         
 argocd-server-76cf7d4c7b-jq9qx                      1/1     Running   0          8m52s
 ```
 
-To fetch the initial admin password, to be able to do this you need to expose your kubeapi-server (set *expose_kubeapi* variable to ture) and fetch the
-kubeconfig from one of the server nodes, it will be in (/var/lib/rancher/k3s/server/cred/admin.kubeconfig): 
+To fetch the initial admin password, to be able to do this you need to expose your kubeapi-server (set _expose_kubeapi_ variable to ture) and fetch the
+kubeconfig from one of the server nodes, it will be in (/var/lib/rancher/k3s/server/cred/admin.kubeconfig):
 
 ```
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
@@ -743,17 +748,16 @@ kubectl -n argocd port-forward service/argocd-server -n argocd 8080:443
 
 After that you should be able to visit the ArgoCD UI: https://localhost:8080
 
-
 ## Deploy a sample stack
 
 Finally to test all the components of the cluster we can deploy a sample stack. The stack is composed by the following components:
 
-* MariaDB
-* Nginx
-* Wordpress
+- MariaDB
+- Nginx
+- Wordpress
 
 Each component is made by: one deployment and one service.
-Wordpress and nginx share the same persistent volume (ReadWriteMany with longhorn storage class). The nginx configuration is stored in four ConfigMaps and  the nginx service is exposed by the nginx ingress controller.
+Wordpress and nginx share the same persistent volume (ReadWriteMany with longhorn storage class). The nginx configuration is stored in four ConfigMaps and the nginx service is exposed by the nginx ingress controller.
 
 Deploy the resources with:
 
@@ -762,7 +766,7 @@ kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster
 kubectl apply -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/wordpress/all-resources.yml
 ```
 
-**NOTE** The Wordpress installation is **secured**. To allow external traffic to `/wp-admin`, `/xmlrpc.php` and `wp-login.php` you have to edit the  [deployments/nginx/all-resources.yml](https://github.com/garutilorenzo/k3s-oci-cluster/blob/master/deployments/nginx/all-resources.yml) and change this line:
+**NOTE** The Wordpress installation is **secured**. To allow external traffic to `/wp-admin`, `/xmlrpc.php` and `wp-login.php` you have to edit the [deployments/nginx/all-resources.yml](https://github.com/garutilorenzo/k3s-oci-cluster/blob/master/deployments/nginx/all-resources.yml) and change this line:
 
 ```yaml
 - name: SECURE_SUBNET
@@ -810,6 +814,17 @@ kubectl delete -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluste
 kubectl delete -f https://raw.githubusercontent.com/garutilorenzo/k3s-oci-cluster/master/deployments/wordpress/all-resources.yml
 ```
 
+## Connect to the cluster
+
+```
+0. var.expose_kubeapi = true
+1. ssh -i <your_private_ssh_key> ubuntu@<load_balancer_ip>
+2. sudo su -
+3. cat /etc/rancher/k3s/k3s.yaml
+4. copy 3 to ~/.kube/config
+5. edit "server: https://<load_balancer_ip>:6443"
+```
+
 ## Clean up
 
 ```
@@ -825,8 +840,8 @@ If you see this error during the infrastructure destruction:
 ```
 Error: 409-Conflict, Invalid State Transition of NLB lifeCycle state from Updating to Updating
 │ Suggestion: The resource is in a conflicted state. Please retry again or contact support for help with service: Network Load Balancer Listener
-│ Documentation: https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/network_load_balancer_listener 
-│ API Reference: https://docs.oracle.com/iaas/api/#/en/networkloadbalancer/20200501/Listener/DeleteListener 
+│ Documentation: https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/network_load_balancer_listener
+│ API Reference: https://docs.oracle.com/iaas/api/#/en/networkloadbalancer/20200501/Listener/DeleteListener
 ```
 
 re-run `terraform destroy`

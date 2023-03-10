@@ -56,7 +56,7 @@ resource "oci_core_network_security_group_security_rule" "allow_kubeapi_from_all
 
   description = "Allow HTTPS from all"
 
-  source      = var.my_public_ip_cidr
+  source      = local.my_public_ip
   source_type = "CIDR_BLOCK"
   stateless   = false
 

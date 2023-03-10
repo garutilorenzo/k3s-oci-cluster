@@ -8,7 +8,7 @@ check_os() {
   clean_version=$${version#*=}
   major=$${clean_version%.*}
   minor=$${clean_version#*.}
-  
+
   if [[ "$clean_name" == "Ubuntu" ]]; then
     operating_system="ubuntu"
   elif [[ "$clean_name" == "Oracle Linux Server" ]]; then
@@ -24,15 +24,14 @@ check_os() {
 }
 
 wait_lb() {
-while [ true ]
-do
-  curl --output /dev/null --silent -k https://${k3s_url}:6443
-  if [[ "$?" -eq 0 ]]; then
-    break
-  fi
-  sleep 5
-  echo "wait for LB"
-done
+  while [ true ]; do
+    curl --output /dev/null --silent -k https://${k3s_url}:6443
+    if [[ "$?" -eq 0 ]]; then
+      break
+    fi
+    sleep 5
+    echo "wait for LB"
+  done
 }
 
 install_helm() {
@@ -41,9 +40,8 @@ install_helm() {
   /root/get_helm.sh
 }
 
-
-render_istio_config(){
-cat << 'EOF' > "$ISTIO_CONFIG_FILE"
+render_istio_config() {
+  cat <<'EOF' >"$ISTIO_CONFIG_FILE"
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 metadata:
@@ -263,7 +261,7 @@ spec:
             mountPath: /etc/istio/ingressgateway-ca-certs
 EOF
 
-cat << 'EOF' > "$ENABLE_ISTIO_PROXY_PROTOCOL"
+  cat <<'EOF' >"$ENABLE_ISTIO_PROXY_PROTOCOL"
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -284,10 +282,10 @@ spec:
 EOF
 }
 
-install_and_configure_istio(){
+install_and_configure_istio() {
   echo "Installing Istio..."
   curl -L https://istio.io/downloadIstio | ISTIO_VERSION=${istio_release} sh -
-  
+
   ISTIO_CONFIG_FILE=/root/custom_istio_config.yaml
   ENABLE_ISTIO_PROXY_PROTOCOL=/root/enable_istio_proxy_protocol.yaml
   render_istio_config
@@ -315,7 +313,7 @@ install_and_configure_traefik2() {
 }
 
 render_traefik2_config() {
-cat << 'EOF' > "$TRAEFIK_VALUES_FILE"
+  cat <<'EOF' >"$TRAEFIK_VALUES_FILE"
 service:
   enabled: true
   type: NodePort
@@ -446,8 +444,8 @@ ports:
 EOF
 }
 
-render_nginx_config(){
-cat << 'EOF' > "$NGINX_RESOURCES_FILE"
+render_nginx_config() {
+  cat <<'EOF' >"$NGINX_RESOURCES_FILE"
 ---
 apiVersion: v1
 kind: Service
@@ -494,14 +492,14 @@ metadata:
 EOF
 }
 
-install_and_configure_nginx(){
+install_and_configure_nginx() {
   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${nginx_ingress_release}/deploy/static/provider/baremetal/deploy.yaml
   NGINX_RESOURCES_FILE=/root/nginx-ingress-resources.yaml
   render_nginx_config
   kubectl apply -f $NGINX_RESOURCES_FILE
 }
 
-install_ingress(){
+install_ingress() {
   INGRESS_CONTROLLER=$1
   if [[ "$INGRESS_CONTROLLER" == "nginx" ]]; then
     install_and_configure_nginx
@@ -514,9 +512,9 @@ install_ingress(){
   fi
 }
 
-render_staging_issuer(){
-STAGING_ISSUER_RESOURCE=$1
-cat << 'EOF' > "$STAGING_ISSUER_RESOURCE"
+render_staging_issuer() {
+  STAGING_ISSUER_RESOURCE=$1
+  cat <<'EOF' >"$STAGING_ISSUER_RESOURCE"
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -539,9 +537,9 @@ spec:
 EOF
 }
 
-render_prod_issuer(){
-PROD_ISSUER_RESOURCE=$1
-cat << 'EOF' > "$PROD_ISSUER_RESOURCE"
+render_prod_issuer() {
+  PROD_ISSUER_RESOURCE=$1
+  cat <<'EOF' >"$PROD_ISSUER_RESOURCE"
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -568,7 +566,7 @@ check_os
 
 if [[ "$operating_system" == "ubuntu" ]]; then
   echo "Canonical Ubuntu"
-  # Disable firewall 
+  # Disable firewall
   /usr/sbin/netfilter-persistent stop
   /usr/sbin/netfilter-persistent flush
 
@@ -579,12 +577,12 @@ if [[ "$operating_system" == "ubuntu" ]]; then
   apt-get update
   apt-get install -y software-properties-common jq
   DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
-  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  python3 python3-pip
+  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y python3 python3-pip
   pip install oci-cli
 
   # Fix /var/log/journal dir size
-  echo "SystemMaxUse=100M" >> /etc/systemd/journald.conf
-  echo "SystemMaxFileSize=100M" >> /etc/systemd/journald.conf
+  echo "SystemMaxUse=100M" >>/etc/systemd/journald.conf
+  echo "SystemMaxFileSize=100M" >>/etc/systemd/journald.conf
   systemctl restart systemd-journald
 fi
 
@@ -595,7 +593,7 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
   # END Disable firewall
 
   # Fix iptables/SELinux bug
-  echo '(allow iptables_t cgroup_t (dir (ioctl)))' > /root/local_iptables.cil
+  echo '(allow iptables_t cgroup_t (dir (ioctl)))' >/root/local_iptables.cil
   semodule -i /root/local_iptables.cil
 
   dnf -y update
@@ -611,12 +609,12 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
 fi
 
 export OCI_CLI_AUTH=instance_principal
-first_instance=$(oci compute instance list --compartment-id ${compartment_ocid} --availability-domain ${availability_domain} --lifecycle-state RUNNING --sort-by TIMECREATED  | jq -r '.data[]|select(."display-name" | endswith("k3s-servers")) | .["display-name"]' | tail -n 1)
+first_instance=$(oci compute instance list --compartment-id ${compartment_ocid} --availability-domain ${availability_domain} --lifecycle-state RUNNING --sort-by TIMECREATED | jq -r '.data[]|select(."display-name" | endswith("k3s-servers")) | .["display-name"]' | tail -n 1)
 instance_id=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance | jq -r '.displayName')
 
 k3s_install_params=("--tls-san ${k3s_tls_san}")
 
-%{ if k3s_subnet != "default_route_table" } 
+%{ if k3s_subnet != "default_route_table" }
 local_ip=$(ip -4 route ls ${k3s_subnet} | grep -Po '(?<=src )(\S+)')
 flannel_iface=$(ip -4 route ls ${k3s_subnet} | grep -Po '(?<=dev )(\S+)')
 
@@ -675,7 +673,7 @@ done
 %{ if install_longhorn }
 if [[ "$first_instance" == "$instance_id" ]]; then
   if [[ "$operating_system" == "ubuntu" ]]; then
-    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  open-iscsi curl util-linux
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y open-iscsi curl util-linux
   fi
 
   systemctl enable --now iscsid.service
@@ -713,9 +711,9 @@ if [[ "$first_instance" == "$instance_id" ]]; then
   kubectl create namespace argocd
   kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/${argocd_release}/manifests/install.yaml
 
-%{ if install_argocd_image_updater }
+  %{ if install_argocd_image_updater }
   kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/${argocd_image_updater_release}/manifests/install.yaml
-%{ endif }
+  %{ endif }
 fi
 %{ endif }
 

@@ -7,7 +7,11 @@ variable "availability_domain" {
 }
 
 variable "tenancy_ocid" {
+  type = string
+}
 
+variable "user_ocid" {
+  type = string
 }
 
 variable "compartment_ocid" {
@@ -15,11 +19,13 @@ variable "compartment_ocid" {
 }
 
 variable "environment" {
-  type = string
+  type    = string
+  default = "staging"
 }
 
 variable "cluster_name" {
-  type = string
+  type    = string
+  default = "k3s-cluster"
 }
 
 variable "os_image_id" {
@@ -43,8 +49,16 @@ variable "fault_domains" {
 
 variable "public_key_path" {
   type        = string
-  default     = "~/.ssh/id_rsa.pub"
   description = "Path to your public workstation SSH key"
+}
+
+variable "private_key_path" {
+  type        = string
+  description = "Path to your private workstation SSH key"
+}
+variable "fingerprint" {
+  type        = string
+  description = "(Optional) The fingerprint for the user's RSA key. This can be found in user settings in the Oracle Cloud Infrastructure console. Required if auth is set to 'ApiKey', ignored otherwise.)"
 }
 
 variable "compute_shape" {
@@ -59,14 +73,14 @@ variable "public_lb_shape" {
 
 variable "oci_identity_dynamic_group_name" {
   type        = string
-  default     = "Compute_Dynamic_Group"
   description = "Dynamic group which contains all instance in this compartment"
+  default     = "Compute_Dynamic_Group"
 }
 
 variable "oci_identity_policy_name" {
   type        = string
-  default     = "Compute_To_Oci_Api_Policy"
   description = "Policy to allow dynamic group, to read OCI api without auth"
+  default     = "Compute_To_Oci_Api_Policy"
 }
 
 variable "oci_core_vcn_dns_label" {
@@ -145,23 +159,22 @@ variable "k3s_worker_pool_size" {
 }
 
 variable "k3s_extra_worker_node" {
-  type    = bool
-  default = true
+  type = bool
 }
 
 variable "unique_tag_key" {
-  type    = string
-  default = "k3s-provisioner"
+  type = string
 }
 
 variable "unique_tag_value" {
   type    = string
-  default = "https://github.com/garutilorenzo/k3s-oci-cluster"
+  default = "k3s-provisioner"
 }
 
 variable "my_public_ip_cidr" {
   type        = string
   description = "My public ip CIDR"
+  default     = ""
 }
 
 variable "istio_release" {
@@ -190,7 +203,7 @@ variable "nginx_ingress_release" {
 
 variable "install_certmanager" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "certmanager_release" {
@@ -205,7 +218,7 @@ variable "certmanager_email_address" {
 
 variable "install_longhorn" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "longhorn_release" {
@@ -215,17 +228,17 @@ variable "longhorn_release" {
 
 variable "install_argocd" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "argocd_release" {
   type    = string
-  default = "v2.4.11"
+  default = "v2.6.3"
 }
 
 variable "install_argocd_image_updater" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "argocd_image_updater_release" {
@@ -233,7 +246,39 @@ variable "argocd_image_updater_release" {
   default = "v0.12.0"
 }
 
+variable "kubevela_release" {
+  type    = string
+  default = "1.7.5"
+}
+
+variable "install_kubevela" {
+  type    = bool
+  default = false
+}
+
+variable "crossplane_release" {
+  type    = string
+  default = "1.9.2"
+}
+
+variable "install_crossplane" {
+  type    = bool
+  default = false
+}
+
 variable "expose_kubeapi" {
   type    = bool
   default = false
+}
+
+variable "kubeconfig_location" {
+  type        = string
+  description = "Kubeconfig default location"
+  default     = "~/.kube/config"
+}
+
+variable "load_cluster_kubeconfig" {
+  type        = bool
+  description = "Enable to access cluster locally - overwriting var.kubeconfig_location content!!!!"
+  default     = false
 }

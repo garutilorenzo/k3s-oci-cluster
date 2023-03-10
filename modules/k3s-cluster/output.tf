@@ -15,3 +15,11 @@ output "k3s_workers_ips" {
 output "public_lb_ip" {
   value = oci_network_load_balancer_network_load_balancer.k3s_public_lb.ip_addresses
 }
+
+output "instructions" {
+  value = <<-EOT
+    To connect to a master node, run:
+    ssh -i ${replace(var.public_key_path, ".pub", "")} ubuntu@${data.oci_core_instance.k3s_servers_instances_ips[0].public_ip}
+    Kubeconfig located at /etc/rancher/k3s/k3s.yaml in root user
+EOT
+}
