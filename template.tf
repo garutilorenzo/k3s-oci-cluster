@@ -53,8 +53,8 @@ resource "oci_core_instance_configuration" "k3s_server_template" {
 
       shape = var.compute_shape
       shape_config {
-        memory_in_gbs = "6"
-        ocpus         = "1"
+        memory_in_gbs = "12"
+        ocpus         = "2"
       }
       source_details {
         image_id    = var.os_image_id
@@ -119,8 +119,8 @@ resource "oci_core_instance_configuration" "k3s_worker_template" {
 
       shape = var.compute_shape
       shape_config {
-        memory_in_gbs = "6"
-        ocpus         = "1"
+        memory_in_gbs = "12"
+        ocpus         = "2"
       }
       source_details {
         image_id    = var.os_image_id
