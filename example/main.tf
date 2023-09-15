@@ -12,7 +12,7 @@ variable "public_key_path" {
 
 variable "my_public_ip_cidr" {}
 variable "cluster_name" {
-  default = "test-cluster"
+  default = "k3s-oci"
 }
 variable "os_image_id" {
   default = "ocid1.image.oc1.eu-frankfurt-1.aaaaaaaaeusqwc4fgp4c5ienodxnlvrkimp4rp4a6snpnkpudznmdlxt3wpq"
@@ -27,10 +27,10 @@ variable "k3s_server_pool_size" {
   default = 1
 }
 variable "k3s_worker_pool_size" {
-  default = 0
+  default = 1
 }
 variable "k3s_extra_worker_node" {
-  default = true
+  default = false
 }
 variable "expose_kubeapi" {
   default = true
@@ -39,11 +39,24 @@ variable "environment" {
   default = "prod"
 }
 
+variable "oci_core_vcn_cidr" {
+  type    = string
+  default = "10.100.0.0/16"
+}
+
+variable "oci_core_subnet_cidr10" {
+  type    = string
+  default = "10.100.0.0/24"
+}
+
+variable "oci_core_subnet_cidr11" {
+  type    = string
+  default = "10.100.1.0/24"
+}
+
 module "k3s_cluster" {
-  # k3s_version               = "v1.23.8+k3s2" # Fix kubectl exec failure
-  # k3s_version               = "v1.24.4+k3s1" # Kubernetes version compatible with longhorn
   #k3s_version               = "v1.28.1+k3s1"
-  #k3s_version = "v1.25.13+k3s1"
+  #k3s_version = "v1.27.5+k3s1"
   k3s_version = "v1.26.7+k3s1"
   #k3s_version = "v1.25.13+k3s1"
 
@@ -62,6 +75,11 @@ module "k3s_cluster" {
   expose_kubeapi            = var.expose_kubeapi
   ingress_controller        = "nginx"
   source                    = "../"
+  install_certmanager       = false
+  install_longhorn          = false
+  install_argocd_image_updater = false
+  argocd_image_updater_release = false
+
 }
 
 output "k3s_servers_ips" {

@@ -672,7 +672,7 @@ until kubectl get pods -A | grep 'Running'; do
   sleep 5
 done
 
-%{ if install_longhorn }
+#%{ if install_longhorn }
 if [[ "$first_instance" == "$instance_id" ]]; then
   if [[ "$operating_system" == "ubuntu" ]]; then
     DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  open-iscsi curl util-linux
@@ -681,7 +681,7 @@ if [[ "$first_instance" == "$instance_id" ]]; then
   systemctl enable --now iscsid.service
   kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/${longhorn_release}/deploy/longhorn.yaml
 fi
-%{ endif }
+#%{ endif }
 
 %{ if ! disable_ingress }
 %{ if ingress_controller != "default" }

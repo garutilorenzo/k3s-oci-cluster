@@ -258,10 +258,10 @@ systemctl restart nginx
 proxy_protocol_stuff
 %{ endif }
 
-%{ if install_longhorn }
+#%{ if install_longhorn }
 if [[ "$operating_system" == "ubuntu" ]]; then
   DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  open-iscsi curl util-linux
 fi
 
 systemctl enable --now iscsid.service
-%{ endif }
+#%{ endif }
