@@ -24,7 +24,7 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
     - [Project setup](#project-setup)
     - [Oracle provider setup](#oracle-provider-setup)
     - [Pre flight checklist](#pre-flight-checklist)
-      - [How to find the availability doamin name](#how-to-find-the-availability-doamin-name)
+      - [How to find the availability domain name](#how-to-find-the-availability-domain-name)
       - [How to list all the OS images](#how-to-list-all-the-os-images)
   - [Notes about OCI always free resources](#notes-about-oci-always-free-resources)
   - [Notes about K3s](#notes-about-k3s)
@@ -69,7 +69,7 @@ This module was tested with:
 ### Terraform OCI user creation (Optional)
 
 Is always recommended to create a separate user and group in your preferred [domain](https://cloud.oracle.com/identity/domains) to use with Terraform.
-This user must have less privileges possible (Zero trust policy). Below is an example policy that you can [create](https://cloud.oracle.com/identity/policies) allow `terraform-group` to manage all the resources needed by this module:
+This user must have less privileges possible (Zero trust policy). Below is an example policy that you can [create](https://cloud.oracle.com/identity/policies) (using the "Advanced" mode in Policy Builder) to allow `terraform-group` to manage all the resources needed by this module:
 
 ```
 Allow group terraform-group to manage virtual-network-family  in compartment id <compartment_ocid>
@@ -83,6 +83,7 @@ Allow group terraform-group to manage policies in compartment id <compartment_oc
 Allow group terraform-group to read network-load-balancers  in compartment id <compartment_ocid>
 Allow group terraform-group to manage dynamic-groups in tenancy
 ```
+**NOTE**: the `<compartment_ocid>` should be the `root` one.
 
 See [how](#oracle-provider-setup) to find the compartment ocid. The user and the group have to be manually created before using this module.
 To create the user go to **Identity & Security -> Users**, then create the group in **Identity & Security -> Groups** and associate the newly created user to the group. The last step is to create the policy in **Identity & Security -> Policies**.
@@ -96,10 +97,11 @@ openssl genrsa -out ~/.oci/<your_name>-oracle-cloud.pem 4096
 chmod 600 ~/.oci/<your_name>-oracle-cloud.pem
 openssl rsa -pubout -in ~/.oci/<your_name>-oracle-cloud.pem -out ~/.oci/<your_name>-oracle-cloud_public.pem
 ```
-
 replace `<your_name>` with your name or a string you prefer.
 
-**NOTE**: `~/.oci/<your_name>-oracle-cloud_public.pem` will be used in  `terraform.tfvars` by the Oracle provider plugin, so please take note of this string.
+Once generated, the RSA key can be uploaded in **Identity & Security -> Domains -> {domain} -> Users -> {user} -> API keys** and the given `fingerprint` will be your `<fingerprint>` in `terraform.tfvars`
+
+**NOTE**: `~/.oci/<your_name>-oracle-cloud_public.pem` will be used in `terraform.tfvars` by the Oracle provider plugin, so please take note of this string.
 
 ### Project setup
 
@@ -112,14 +114,15 @@ cd k3s-oci-cluster/example/
 
 Now you have to edit the `main.tf` file and you have to create the `terraform.tfvars` file. For more detail see [Oracle provider setup](#oracle-provider-setup) and [Pre flight checklist](#pre-flight-checklist).
 
-Or if you prefer you can create an new empty directory in your workspace and create this three files:
+#### Use this repository as template
+
+If you prefer you can create an new empty directory in your workspace and create this three files:
 
 * `terraform.tfvars` - More details in [Oracle provider setup](#oracle-provider-setup)
 * `main.tf`
 * `provider.tf`
 
 The `main.tf` file will look like:
-
 
 ```
 variable "compartment_ocid" {}
@@ -157,7 +160,7 @@ module "k3s_cluster" {
   k3s_server_pool_size      = var.k3s_server_pool_size
   k3s_worker_pool_size      = var.k3s_worker_pool_size
   ingress_controller        = "nginx"
-  source                    = "../"
+  source                    = "github.com/garutilorenzo/k3s-oci-cluster"
 }
 
 output "k3s_servers_ips" {
@@ -186,6 +189,8 @@ provider "oci" {
   region           = var.region
 }
 ```
+
+### Terraform initialization
 
 Now we can init terraform with:
 
@@ -224,11 +229,11 @@ In the `example/` directory of this repo you need to create a `terraform.tfvars`
 fingerprint      = "<rsa_key_fingerprint>"
 private_key_path = "~/.oci/<your_name>-oracle-cloud.pem"
 user_ocid        = "<user_ocid>"
-tenancy_ocid     = "<tenency_ocid>"
+tenancy_ocid     = "<tanency_ocid>"
 compartment_ocid = "<compartment_ocid>"
 ```
 
-To find your `tenency_ocid` in the Ocacle Cloud console go to: **Governance and Administration > Tenency details**, then copy the OCID.
+To find your `tenancy_ocid` in the Ocacle Cloud console go to: **Governance and Administration > Tenency details**, then copy the OCID.
 
 To find you `user_ocid` in the Ocacle Cloud console go to **User setting** (click on the icon in the top right corner, then click on User settings), click your username and then copy the OCID.
 
@@ -242,11 +247,11 @@ Once you have created the terraform.tfvars file edit the `main.tf` file (always 
 
 | Var   | Required | Desc |
 | ------- | ------- | ----------- |
-| `region`       | `yes`       | set the correct OCI region based on your needs  |
-| `availability_domain` | `yes`        | Set the correct availability domain. See [how](#how-to-find-the-availability-doamin-name) to find the availability domain|
+| `region`       | `yes`       | set the correct region based on your needs (note that this requires the name, not the OCID. Example: `eu-frankfurt-1`) |
+| `availability_domain` | `yes`        | Set the correct availability domain. See [how](#how-to-find-the-availability-domain-name) to find the availability domain (note that this requires the name, not the OCID. Example: `TYPo:EU-FRANKFURT-1-AD-2`)|
 | `compartment_ocid` | `yes`        | Set the correct compartment ocid. See [how](#oracle-provider-setup) to find the compartment ocid |
 | `cluster_name` | `yes`        | the name of your K3s cluster. Default: k3s-cluster |
-| `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
+| `my_public_ip_cidr` | `yes`        |  your local public IP in CIDR format (Example: `195.102.xxx.xxx/32`) |
 | `private_key_path`     | `yes`       | Path to your private **OCI RSA key** |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
 | `os_image_id`  | `yes`  | Image id to use. See [how](#how-to-list-all-the-os-images) to list all available OS images |
@@ -290,7 +295,7 @@ Once you have created the terraform.tfvars file edit the `main.tf` file (always 
 | `expose_kubeapi`  | `no`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
 
 
-#### How to find the availability doamin name
+#### How to find the availability domain name
 
 To find the list of the availability domains run this command on che Cloud Shell:
 
