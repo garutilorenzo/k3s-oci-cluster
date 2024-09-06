@@ -83,7 +83,6 @@ Allow group terraform-group to manage policies in compartment id <compartment_oc
 Allow group terraform-group to read network-load-balancers  in compartment id <compartment_ocid>
 Allow group terraform-group to manage dynamic-groups in tenancy
 ```
-**NOTE**: the `<compartment_ocid>` should be the `root` one.
 
 See [how](#oracle-provider-setup) to find the compartment ocid. The user and the group have to be manually created before using this module.
 To create the user go to **Identity & Security -> Users**, then create the group in **Identity & Security -> Groups** and associate the newly created user to the group. The last step is to create the policy in **Identity & Security -> Policies**.
@@ -229,15 +228,15 @@ In the `example/` directory of this repo you need to create a `terraform.tfvars`
 fingerprint      = "<rsa_key_fingerprint>"
 private_key_path = "~/.oci/<your_name>-oracle-cloud.pem"
 user_ocid        = "<user_ocid>"
-tenancy_ocid     = "<tanency_ocid>"
+tenancy_ocid     = "<tenancy_ocid>"
 compartment_ocid = "<compartment_ocid>"
 ```
 
-To find your `tenancy_ocid` in the Ocacle Cloud console go to: **Governance and Administration > Tenency details**, then copy the OCID.
+To find your `tenancy_ocid` in the Ocacle Cloud console go to: **Governance and Administration > Tenancy details**, then copy the OCID.
 
 To find you `user_ocid` in the Ocacle Cloud console go to **User setting** (click on the icon in the top right corner, then click on User settings), click your username and then copy the OCID.
 
-The `compartment_ocid` is the same as `tenency_ocid`.
+The `compartment_ocid` is the same as `tenancy_ocid`.
 
 The fingerprint is the fingerprint of your RSA key, you can find this vale under **User setting > API Keys**.
 
