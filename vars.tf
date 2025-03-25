@@ -185,7 +185,7 @@ variable "ingress_controller" {
 
 variable "nginx_ingress_release" {
   type    = string
-  default = "v1.5.1"
+  default = "v1.12.1"
 }
 
 variable "install_certmanager" {
@@ -195,7 +195,7 @@ variable "install_certmanager" {
 
 variable "certmanager_release" {
   type    = string
-  default = "v1.11.0"
+  default = "v1.12.16"
 }
 
 variable "certmanager_email_address" {
@@ -210,7 +210,7 @@ variable "install_longhorn" {
 
 variable "longhorn_release" {
   type    = string
-  default = "v1.4.0"
+  default = "v1.8.1"
 }
 
 variable "install_argocd" {
@@ -220,7 +220,7 @@ variable "install_argocd" {
 
 variable "argocd_release" {
   type    = string
-  default = "v2.4.11"
+  default = "v2.14.9"
 }
 
 variable "install_argocd_image_updater" {
@@ -230,7 +230,7 @@ variable "install_argocd_image_updater" {
 
 variable "argocd_image_updater_release" {
   type    = string
-  default = "v0.12.0"
+  default = "v0.16.0"
 }
 
 variable "expose_kubeapi" {
