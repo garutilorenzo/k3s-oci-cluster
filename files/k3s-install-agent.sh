@@ -24,9 +24,16 @@ check_os() {
 }
 
 install_oci_cli_ubuntu(){
-  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y python3 python3-pip nginx
+  DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y python3 python3-pip nginx libnginx-mod-stream
   systemctl enable nginx
-  pip install oci-cli
+  # https://github.com/oracle/oci-cli/issues/875
+  LATEST_OCICLI=$(curl -L https://api.github.com/repos/oracle/oci-cli/releases | \
+          jq -r 'sort_by(.name) | reverse | .[0].name') ;
+  echo "LATEST_OCICLI=$${LATEST_OCICLI}" ;
+  bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" \
+          -s \
+          --accept-all-defaults \
+          --oci-cli-version $${LATEST_OCICLI}
 }
 
 install_oci_cli_oracle(){
@@ -132,8 +139,9 @@ cat << 'EOF' > /root/find_ips.sh
 export OCI_CLI_AUTH=instance_principal
 private_ips=()
 
+export PATH="/root/bin:$PATH"
 # Fetch the OCID of all the running instances in OCI and store to an array
-instance_ocids=$(oci search resource structured-search --query-text "QUERY instance resources where lifeCycleState='RUNNING'"  --query 'data.items[*].identifier' --raw-output | jq -r '.[]' ) 
+instance_ocids=$(oci search resource structured-search --query-text "QUERY instance resources where lifeCycleState='RUNNING'"  --query 'data.items[*].identifier' --raw-output | jq -r '.[]' )
 
 # Iterate through the array to fetch details of each instance one by one
 for val in $${instance_ocids[@]} ; do
