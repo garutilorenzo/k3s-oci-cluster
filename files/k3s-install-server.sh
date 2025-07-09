@@ -580,7 +580,14 @@ if [[ "$operating_system" == "ubuntu" ]]; then
   apt-get install -y software-properties-common jq
   DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
   DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y  python3 python3-pip
-  pip install oci-cli
+  # https://github.com/oracle/oci-cli/issues/875
+  LATEST_OCICLI=$(curl -L https://api.github.com/repos/oracle/oci-cli/releases | \
+          jq -r 'sort_by(.name) | reverse | .[0].name') ;
+  echo "LATEST_OCICLI=$${LATEST_OCICLI}" ;
+  bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" \
+          -s \
+          --accept-all-defaults \
+          --oci-cli-version $${LATEST_OCICLI}
 
   # Fix /var/log/journal dir size
   echo "SystemMaxUse=100M" >> /etc/systemd/journald.conf
@@ -611,6 +618,7 @@ if [[ "$operating_system" == "oraclelinux" ]]; then
 fi
 
 export OCI_CLI_AUTH=instance_principal
+export PATH="/root/bin:$PATH"
 first_instance=$(oci compute instance list --compartment-id ${compartment_ocid} --availability-domain ${availability_domain} --lifecycle-state RUNNING --sort-by TIMECREATED  | jq -r '.data[]|select(."display-name" | endswith("k3s-servers")) | .["display-name"]' | tail -n 1)
 instance_id=$(curl -s -H "Authorization: Bearer Oracle" -L http://169.254.169.254/opc/v2/instance | jq -r '.displayName')
 

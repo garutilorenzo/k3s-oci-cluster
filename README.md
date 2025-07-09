@@ -62,8 +62,8 @@ Once you get the account, follow the *Before you begin* and *1. Prepare* step in
 
 This module was tested with:
 
-* Ubuntu 20.04, 22.04 (ubuntu remote user)
-* Ubuntu 20.04, 22.04 Minimal (ubuntu remote user)
+* Ubuntu 20.04, 22.04, 24.04 (ubuntu remote user)
+* Ubuntu 20.04, 22.04 Minimal, 24.04 (ubuntu remote user)
 * Oracle Linux 8, 9 (opc remote user)
 
 ### Terraform OCI user creation (Optional)
