@@ -279,16 +279,16 @@ Once you have created the terraform.tfvars file edit the `main.tf` file (always 
 | `disable_ingress`  | `no`  | Boolean value, disable all ingress controllers. Default: false |
 | `ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
 | `ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
-| `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true. To use longhorn set the *k3s_version* < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)  |
-| `longhorn_release`  | `no`  | Longhorn release. Default: v1.4.0  |
+| `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true. |
+| `longhorn_release`  | `no`  | Longhorn release. Default: v1.8.1  |
 | `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
-| `nginx_ingress_release`  | `no`  | Longhorn release. Default: v1.5.1  |
-| `certmanager_release`  | `no`  | Cert manager release. Default: v1.11.0  |
-| `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Defaul: changeme@example.com  |
+| `nginx_ingress_release`  | `no`  | Longhorn release. Default: v1.12.1  |
+| `certmanager_release`  | `no`  | Cert manager release. Default: v1.12.16  |
+| `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Default: changeme@example.com  |
 | `install_argocd`  | `no`  | Boolean value, install [Argo CD](https://argo-cd.readthedocs.io/en/stable/) "a declarative, GitOps continuous delivery tool for Kubernetes.". Default: true  |
-| `argocd_release`  | `no`  | Argo CD release. Default: v2.4.11  |
+| `argocd_release`  | `no`  | Argo CD release. Default: v2.14.9  |
 | `install_argocd_image_updater`  | `no`  | Boolean value, install [Argo CD Image Updater](https://argocd-image-updater.readthedocs.io/en/stable/) "A tool to automatically update the container images of Kubernetes workloads that are managed by Argo CD.". Default: true  |
-| `argocd_image_updater_release`  | `no`  | Argo CD release Image Updater. Default: v0.12.0  |
+| `argocd_image_updater_release`  | `no`  | Argo CD release Image Updater. Default: v0.16.0 |
 | `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
 | `unique_tag_value`  | `no`  | Unique value used with  unique_tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster |
 | `expose_kubeapi`  | `no`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
@@ -384,8 +384,6 @@ The other resources created by terraform are:
 ## Cluster resource deployed
 
 This setup will automatically install [longhorn](https://longhorn.io/). Longhorn is a *Cloud native distributed block storage for Kubernetes*. To disable the longhorn deployment set `install_longhorn` variable to `false`.
-
-**NOTE** to use longhorn set the `k3s_version` < `v1.25.x` [Ref.](https://github.com/longhorn/longhorn/issues/4003)
 
 ### Nginx ingress controller
 
