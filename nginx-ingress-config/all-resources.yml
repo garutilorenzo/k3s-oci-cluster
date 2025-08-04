@@ -36,7 +36,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/part-of: ingress-nginx
-    app.kubernetes.io/version: 1.1.1
-    helm.sh/chart: ingress-nginx-4.0.16
+    app.kubernetes.io/version: 1.12.1
+    helm.sh/chart: ingress-nginx-4.12.1
   name: ingress-nginx-controller
   namespace: ingress-nginx

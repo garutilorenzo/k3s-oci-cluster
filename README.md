@@ -24,7 +24,7 @@ Deploy a Kubernetes cluster for free, using K3s and Oracle [always free](https:/
     - [Project setup](#project-setup)
     - [Oracle provider setup](#oracle-provider-setup)
     - [Pre flight checklist](#pre-flight-checklist)
-      - [How to find the availability doamin name](#how-to-find-the-availability-doamin-name)
+      - [How to find the availability domain name](#how-to-find-the-availability-domain-name)
       - [How to list all the OS images](#how-to-list-all-the-os-images)
   - [Notes about OCI always free resources](#notes-about-oci-always-free-resources)
   - [Notes about K3s](#notes-about-k3s)
@@ -62,14 +62,14 @@ Once you get the account, follow the *Before you begin* and *1. Prepare* step in
 
 This module was tested with:
 
-* Ubuntu 20.04, 22.04 (ubuntu remote user)
-* Ubuntu 20.04, 22.04 Minimal (ubuntu remote user)
+* Ubuntu 20.04, 22.04, 24.04 (ubuntu remote user)
+* Ubuntu 20.04, 22.04 Minimal, 24.04 (ubuntu remote user)
 * Oracle Linux 8, 9 (opc remote user)
 
 ### Terraform OCI user creation (Optional)
 
 Is always recommended to create a separate user and group in your preferred [domain](https://cloud.oracle.com/identity/domains) to use with Terraform.
-This user must have less privileges possible (Zero trust policy). Below is an example policy that you can [create](https://cloud.oracle.com/identity/policies) allow `terraform-group` to manage all the resources needed by this module:
+This user must have less privileges possible (Zero trust policy). Below is an example policy that you can [create](https://cloud.oracle.com/identity/policies) (using the "Advanced" mode in Policy Builder) to allow `terraform-group` to manage all the resources needed by this module:
 
 ```
 Allow group terraform-group to manage virtual-network-family  in compartment id <compartment_ocid>
@@ -96,10 +96,11 @@ openssl genrsa -out ~/.oci/<your_name>-oracle-cloud.pem 4096
 chmod 600 ~/.oci/<your_name>-oracle-cloud.pem
 openssl rsa -pubout -in ~/.oci/<your_name>-oracle-cloud.pem -out ~/.oci/<your_name>-oracle-cloud_public.pem
 ```
-
 replace `<your_name>` with your name or a string you prefer.
 
-**NOTE**: `~/.oci/<your_name>-oracle-cloud_public.pem` will be used in  `terraform.tfvars` by the Oracle provider plugin, so please take note of this string.
+Once generated, the RSA key can be uploaded in **Identity & Security -> Domains -> {domain} -> Users -> {user} -> API keys** and the given `fingerprint` will be your `<fingerprint>` in `terraform.tfvars`
+
+**NOTE**: `~/.oci/<your_name>-oracle-cloud_public.pem` will be used in `terraform.tfvars` by the Oracle provider plugin, so please take note of this string.
 
 ### Project setup
 
@@ -112,14 +113,15 @@ cd k3s-oci-cluster/example/
 
 Now you have to edit the `main.tf` file and you have to create the `terraform.tfvars` file. For more detail see [Oracle provider setup](#oracle-provider-setup) and [Pre flight checklist](#pre-flight-checklist).
 
-Or if you prefer you can create an new empty directory in your workspace and create this three files:
+#### Use this repository as template
+
+If you prefer you can create an new empty directory in your workspace and create this three files:
 
 * `terraform.tfvars` - More details in [Oracle provider setup](#oracle-provider-setup)
 * `main.tf`
 * `provider.tf`
 
 The `main.tf` file will look like:
-
 
 ```
 variable "compartment_ocid" {}
@@ -157,7 +159,7 @@ module "k3s_cluster" {
   k3s_server_pool_size      = var.k3s_server_pool_size
   k3s_worker_pool_size      = var.k3s_worker_pool_size
   ingress_controller        = "nginx"
-  source                    = "../"
+  source                    = "github.com/garutilorenzo/k3s-oci-cluster"
 }
 
 output "k3s_servers_ips" {
@@ -186,6 +188,8 @@ provider "oci" {
   region           = var.region
 }
 ```
+
+### Terraform initialization
 
 Now we can init terraform with:
 
@@ -224,15 +228,15 @@ In the `example/` directory of this repo you need to create a `terraform.tfvars`
 fingerprint      = "<rsa_key_fingerprint>"
 private_key_path = "~/.oci/<your_name>-oracle-cloud.pem"
 user_ocid        = "<user_ocid>"
-tenancy_ocid     = "<tenency_ocid>"
+tenancy_ocid     = "<tenancy_ocid>"
 compartment_ocid = "<compartment_ocid>"
 ```
 
-To find your `tenency_ocid` in the Ocacle Cloud console go to: **Governance and Administration > Tenency details**, then copy the OCID.
+To find your `tenancy_ocid` in the Ocacle Cloud console go to: **Governance and Administration > Tenancy details**, then copy the OCID.
 
 To find you `user_ocid` in the Ocacle Cloud console go to **User setting** (click on the icon in the top right corner, then click on User settings), click your username and then copy the OCID.
 
-The `compartment_ocid` is the same as `tenency_ocid`.
+The `compartment_ocid` is the same as `tenancy_ocid`.
 
 The fingerprint is the fingerprint of your RSA key, you can find this vale under **User setting > API Keys**.
 
@@ -242,11 +246,11 @@ Once you have created the terraform.tfvars file edit the `main.tf` file (always 
 
 | Var   | Required | Desc |
 | ------- | ------- | ----------- |
-| `region`       | `yes`       | set the correct OCI region based on your needs  |
-| `availability_domain` | `yes`        | Set the correct availability domain. See [how](#how-to-find-the-availability-doamin-name) to find the availability domain|
+| `region`       | `yes`       | set the correct region based on your needs (note that this requires the name, not the OCID. Example: `eu-frankfurt-1`) |
+| `availability_domain` | `yes`        | Set the correct availability domain. See [how](#how-to-find-the-availability-domain-name) to find the availability domain (note that this requires the name, not the OCID. Example: `TYPo:EU-FRANKFURT-1-AD-2`)|
 | `compartment_ocid` | `yes`        | Set the correct compartment ocid. See [how](#oracle-provider-setup) to find the compartment ocid |
 | `cluster_name` | `yes`        | the name of your K3s cluster. Default: k3s-cluster |
-| `my_public_ip_cidr` | `yes`        |  your public ip in cidr format (Example: 195.102.xxx.xxx/32) |
+| `my_public_ip_cidr` | `yes`        |  your local public IP in CIDR format (Example: `195.102.xxx.xxx/32`) |
 | `private_key_path`     | `yes`       | Path to your private **OCI RSA key** |
 | `environment`  | `yes`  | Current work environment (Example: staging/dev/prod). This value is used for tag all the deployed resources |
 | `os_image_id`  | `yes`  | Image id to use. See [how](#how-to-list-all-the-os-images) to list all available OS images |
@@ -275,22 +279,22 @@ Once you have created the terraform.tfvars file edit the `main.tf` file (always 
 | `disable_ingress`  | `no`  | Boolean value, disable all ingress controllers. Default: false |
 | `ingress_controller_http_nodeport`  | `no`  | NodePort where nginx ingress will listen for http traffic. Default 30080  |
 | `ingress_controller_https_nodeport`  | `no`  | NodePort where nginx ingress will listen for https traffic.  Default 30443 |
-| `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true. To use longhorn set the *k3s_version* < v1.25.x [Ref.](https://github.com/longhorn/longhorn/issues/4003)  |
-| `longhorn_release`  | `no`  | Longhorn release. Default: v1.4.0  |
+| `install_longhorn`  | `no`  | Boolean value, install longhorn "Cloud native distributed block storage for Kubernetes". Default: true. |
+| `longhorn_release`  | `no`  | Longhorn release. Default: v1.8.1  |
 | `install_certmanager`  | `no`  | Boolean value, install [cert manager](https://cert-manager.io/) "Cloud native certificate management". Default: true  |
-| `nginx_ingress_release`  | `no`  | Longhorn release. Default: v1.5.1  |
-| `certmanager_release`  | `no`  | Cert manager release. Default: v1.11.0  |
-| `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Defaul: changeme@example.com  |
+| `nginx_ingress_release`  | `no`  | Longhorn release. Default: v1.12.1  |
+| `certmanager_release`  | `no`  | Cert manager release. Default: v1.12.16  |
+| `certmanager_email_address`  | `no`  | Email address used for signing https certificates. Default: changeme@example.com  |
 | `install_argocd`  | `no`  | Boolean value, install [Argo CD](https://argo-cd.readthedocs.io/en/stable/) "a declarative, GitOps continuous delivery tool for Kubernetes.". Default: true  |
-| `argocd_release`  | `no`  | Argo CD release. Default: v2.4.11  |
+| `argocd_release`  | `no`  | Argo CD release. Default: v2.14.9  |
 | `install_argocd_image_updater`  | `no`  | Boolean value, install [Argo CD Image Updater](https://argocd-image-updater.readthedocs.io/en/stable/) "A tool to automatically update the container images of Kubernetes workloads that are managed by Argo CD.". Default: true  |
-| `argocd_image_updater_release`  | `no`  | Argo CD release Image Updater. Default: v0.12.0  |
+| `argocd_image_updater_release`  | `no`  | Argo CD release Image Updater. Default: v0.16.0 |
 | `unique_tag_key`  | `no`  | Unique tag name used for tagging all the deployed resources. Default: k3s-provisioner |
 | `unique_tag_value`  | `no`  | Unique value used with  unique_tag_key. Default: https://github.com/garutilorenzo/k3s-oci-cluster |
 | `expose_kubeapi`  | `no`  | Boolean value, default false. Expose or not the kubeapi server to the internet. Access is granted only from *my_public_ip_cidr* for security reasons. |
 
 
-#### How to find the availability doamin name
+#### How to find the availability domain name
 
 To find the list of the availability domains run this command on che Cloud Shell:
 
@@ -380,8 +384,6 @@ The other resources created by terraform are:
 ## Cluster resource deployed
 
 This setup will automatically install [longhorn](https://longhorn.io/). Longhorn is a *Cloud native distributed block storage for Kubernetes*. To disable the longhorn deployment set `install_longhorn` variable to `false`.
-
-**NOTE** to use longhorn set the `k3s_version` < `v1.25.x` [Ref.](https://github.com/longhorn/longhorn/issues/4003)
 
 ### Nginx ingress controller
 
